@@ -43,6 +43,21 @@
             @reset="resetData"
         >
           <el-form ref="UserForm" :model="User" label-width="80px" style="width: 100%;">
+
+            <el-form-item label="头像">
+              <div>
+                <el-upload
+                    class="avatar-uploader"
+                    :show-file-list="false"
+                    :on-success="handleAvatarSuccess"
+                    :before-upload="beforeAvatarUpload"
+                >
+                  <img v-if="User.AvatarUrl" :src="User.AvatarUrl" class="avatar"  alt=""/>
+                  <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+                </el-upload>
+              </div>
+            </el-form-item>
+
             <el-form-item label="用户名">
               <el-input v-model="User.Username" placeholder="请输入用户名"></el-input>
             </el-form-item>
@@ -115,6 +130,8 @@ import {getList as getUserList, add, update, detail, deletedById} from '@/servic
 import {Plus, Refresh, RefreshRight, Search} from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
 import {useCRUD} from '@/composables/useCRUD';
+import {uploadFile} from "@/services/uploadService";
+
 
 export default {
   components: {Refresh, Search, Plus, RefreshRight, ADialog},
@@ -125,7 +142,8 @@ export default {
       Email: '',
       Password: '',
       Status: null,
-      Roles: []
+      Roles: [],
+      AvatarUrl: ''
     };
 
     const apiMethods = {
@@ -134,6 +152,32 @@ export default {
       update: update,
       detail: detail,
       deletedById: deletedById
+    };
+
+
+    const handleAvatarSuccess = (response) => {
+      User.AvatarUrl = response.avatar_url;
+    };
+
+    const beforeAvatarUpload = async (rawFile) => {
+      if (rawFile.type !== 'image/jpeg') {
+        ElMessage.error('头像图片必须为JPG格式!');
+        return false;
+      } else if (rawFile.size / 1024 / 1024 > 2) {
+        ElMessage.error('头像图片大小不能超过2MB!');
+        return false;
+      }
+
+      try {
+        const response = await uploadFile(rawFile);
+        console.log(response.data.avatar_url)
+        if (response && response.data && response.data.avatar_url) {
+          User.value.AvatarUrl = "http://127.0.0.1:8051/" + response.data.avatar_url;
+        }
+      } catch (error) {
+        ElMessage.error('上传失败!');
+      }
+      return false;
     };
 
     const {
@@ -174,7 +218,9 @@ export default {
       getDetail,
       deleteUser,
       resetData,
-      dialogTitle
+      dialogTitle,
+      handleAvatarSuccess,
+      beforeAvatarUpload
     };
   }
 };
@@ -197,5 +243,35 @@ export default {
 
 .wide-cascader .el-input__inner {
   width: 300px !important;
+}
+
+.avatar-uploader .avatar {
+  width: 178px;
+  height: 178px;
+  display: block;
+}
+</style>
+
+<style>
+
+.avatar-uploader .el-upload {
+  border: 1px dashed var(--el-border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: var(--el-transition-duration-fast);
+}
+
+.avatar-uploader .el-upload:hover {
+  border-color: var(--el-color-primary);
+}
+
+.el-icon.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 178px;
+  height: 178px;
+  text-align: center;
 }
 </style>
