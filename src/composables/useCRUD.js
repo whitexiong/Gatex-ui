@@ -1,6 +1,5 @@
 import {ref, reactive, toRefs} from 'vue';
 import {ElMessageBox} from 'element-plus';
-import {getList} from "@/services/menuService";
 
 export const useCRUD = (apiMethods, initialData) => {
     const data = ref([]);
@@ -65,7 +64,7 @@ export const useCRUD = (apiMethods, initialData) => {
     const getDetail = async (id) => {
         try {
             const detailResponse = await apiMethods.detail(id);
-
+            console.log("响应：", detailResponse)
             if (detailResponse) {
                 Object.keys(state.selected).forEach(key => {
                     if (key in detailResponse.data) {

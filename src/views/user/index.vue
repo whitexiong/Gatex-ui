@@ -142,8 +142,8 @@ export default {
       Email: '',
       Password: '',
       Status: null,
+      AvatarUrl: '',
       Roles: [],
-      AvatarUrl: ''
     };
 
     const apiMethods = {

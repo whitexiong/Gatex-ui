@@ -3,10 +3,10 @@ import MainLayout from '@/components/MainLayout.vue';
 import Dashboard from '@/components/Dashboard.vue';
 import UserLogin from '@/components/UserLogin.vue';
 import MenuManagement from '@/views/menu/index.vue';
-import policy from '@/views/policy/index.vue';
 import role from '@/views/role/index.vue';
 import route from '@/views/route/index.vue';
 import user from '@/views/user/index.vue';
+import chat from '@/views/chat/index.vue';
 import axios from "axios";
 
 const routes = [
@@ -39,20 +39,6 @@ const routes = [
                             requiresAuth: true
                         }
                     }
-                ]
-            },
-            {
-                path: 'policy',
-                component: policy,
-                children: [
-                    {
-                        path: 'index',
-                        name: 'PolicyIndex',
-                        component: policy,
-                        meta: {
-                            requiresAuth: true
-                        }
-                    },
                 ]
             },
             {
@@ -91,6 +77,20 @@ const routes = [
                         path: 'index',
                         name: 'UserIndex',
                         component: user,
+                        meta: {
+                            requiresAuth: true
+                        }
+                    }
+                ]
+            },
+            {
+                path: 'chat',
+                component: chat,
+                children: [
+                    {
+                        path: 'index',
+                        name: 'ChatIndex',
+                        component: chat,
                         meta: {
                             requiresAuth: true
                         }
