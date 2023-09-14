@@ -55,12 +55,13 @@ export default {
 
     const scrollToBottom = () => {
       nextTick(() => {
-        const container = state.$refs.messagesContainer;
-        if (container) {
-          container.scrollTop = container.scrollHeight;
+        const container = ref.messagesContainer;
+        if (container && container.value) {
+          container.value.scrollTop = container.value.scrollHeight;
         }
       });
     };
+
 
     const currentChatMessages = computed(() => {
       return state.chatMessages[state.selectedUser?.chat_room_id] || [];
@@ -420,5 +421,51 @@ export default {
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent; /* 鼠标悬停时，滑块变色 */
 }
 
+.wechat-container,
+.chat-container {
+    height: 100%;
+}
+
+.user-list {
+    width: 100%; /* 默认为100%适应手机屏幕 */
+    overflow-y: scroll;
+}
+
+.chat-container {
+    flex-direction: column-reverse; /* 将消息记录放在底部 */
+}
+
+.header,
+.input-container {
+    padding: 10px; /* 调整内边距使其更适应手机屏幕 */
+}
+
+.chat-input {
+    width: 80%; /* 调整宽度为80%，使发送按钮有足够的空间 */
+}
+
+.send-button {
+    width: 20%;
+    text-align: center;
+}
+
+/* 当屏幕宽度大于768px时，适应桌面或平板 */
+@media (min-width: 768px) {
+    .user-list {
+        width: 30%; /* 调整宽度为30% */
+    }
+
+    .chat-container {
+        flex-direction: column;
+    }
+
+    .chat-input {
+        width: 90%;
+    }
+
+    .send-button {
+        width: 10%;
+    }
+}
 
 </style>
