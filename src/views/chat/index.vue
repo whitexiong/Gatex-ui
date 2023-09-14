@@ -53,6 +53,15 @@ export default {
       socket: null
     });
 
+    const scrollToBottom = () => {
+      nextTick(() => {
+        const container = state.$refs.messagesContainer;
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      });
+    };
+
     const currentChatMessages = computed(() => {
       return state.chatMessages[state.selectedUser?.chat_room_id] || [];
     });
@@ -60,6 +69,7 @@ export default {
     onMounted(() => {
       initWebSocket();
       fetchChatUsers();
+      scrollToBottom();
     });
 
     onBeforeUnmount(() => {
@@ -119,13 +129,12 @@ export default {
           }
 
           state.chatMessages[chatRoomId].push({ content: data.Content, type: 'received' });
+          scrollToBottom();
 
         } catch (error) {
           console.error("解析消息错误:", error);
         }
       };
-
-
 
       state.socket.onerror = (error) => {
         console.error("WebSocket 出错：", error);
@@ -166,6 +175,7 @@ export default {
         state.chatMessages[state.selectedUser.chat_room_id].push({ content: state.message, type: 'sent' });
 
         state.message = '';
+        scrollToBottom()
       }
     };
 
