@@ -56,9 +56,11 @@ export default {
     const messagesContainer = ref(null); // 定义一个响应式引用
     const scrollToBottom = () => {
       nextTick(() => {
-        if (messagesContainer.value) {
-          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
-        }
+        setTimeout(() => {
+          if (messagesContainer.value) {
+            messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+          }
+        }, 50);  // 50ms delay
       });
     };
 
@@ -129,7 +131,7 @@ export default {
           }
 
           state.chatMessages[chatRoomId].push({ content: data.Content, type: 'received' });
-          scrollToBottom();
+          setTimeout(scrollToBottom, 50);
 
         } catch (error) {
           console.error("解析消息错误:", error);
