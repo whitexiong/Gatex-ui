@@ -200,7 +200,8 @@ export default {
       selectUser,
       fetchChatUsers,
       initWebSocket,
-      fetchChatHistory
+      fetchChatHistory,
+      messagesContainer
     };
   }
 };
