@@ -37,7 +37,7 @@
 </template>
 
 <script>
-import { reactive, toRefs, onBeforeUnmount, onMounted, computed, nextTick } from "vue";
+import { reactive, toRefs, onBeforeUnmount, onMounted, computed, nextTick, ref } from "vue";
 import { WalletFilled, Folder, ChatRound } from "@element-plus/icons-vue";
 import { getChatUsers, fetchChatHistoryForUser } from "@/services/chatService";
 
@@ -53,11 +53,11 @@ export default {
       socket: null
     });
 
+    const messagesContainer = ref(null); // 定义一个响应式引用
     const scrollToBottom = () => {
       nextTick(() => {
-        const container = this.$refs.messagesContainer;
-        if (container) {
-          container.scrollTop = container.scrollHeight;
+        if (messagesContainer.value) {
+          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
         }
       });
     };
