@@ -55,13 +55,12 @@ export default {
 
     const scrollToBottom = () => {
       nextTick(() => {
-        const container = ref.messagesContainer;
-        if (container && container.value) {
-          container.value.scrollTop = container.value.scrollHeight;
+        const container = this.$refs.messagesContainer;
+        if (container) {
+          container.scrollTop = container.scrollHeight;
         }
       });
     };
-
 
     const currentChatMessages = computed(() => {
       return state.chatMessages[state.selectedUser?.chat_room_id] || [];
