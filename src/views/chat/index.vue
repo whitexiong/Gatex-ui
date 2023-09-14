@@ -11,7 +11,7 @@
         {{ selectedUser.name }}
         <span v-if="isTyping">...正在输入</span>
       </el-header>
-      <el-main class="messages" ref="messagesContainer">
+      <el-main class="messages" :ref="messagesContainer">
         <div v-for="(msg, index) in currentChatMessages" :key="index" :class="msg.type">
           <el-avatar :src="msg.type === 'sent' ? 'https://placekitten.com/49/49' : selectedUser.avatar" class="chat-avatar"></el-avatar>
           <div class="message">{{ msg.content }}</div>
@@ -201,14 +201,12 @@ export default {
       fetchChatUsers,
       initWebSocket,
       fetchChatHistory,
-      messagesContainer
+      messagesContainer,
+      scrollToBottom
     };
   }
 };
 </script>
-
-
-
 
 <style scoped>
 .wechat-container {
