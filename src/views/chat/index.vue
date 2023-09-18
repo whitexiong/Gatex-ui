@@ -1,22 +1,74 @@
 <template>
   <el-container class="wechat-container">
-    <el-aside class="user-list">
-      <div v-for="user in users" :key="user.id" class="user-item" :class="{ selected: user.id === selectedUser.id }" @click="selectUser(user)">
-        <el-avatar :src="user.avatar"></el-avatar>
-        <span>{{ user.username }}</span>
+
+    <el-aside class="aside">
+      <!-- 搜索和+按钮 -->
+      <div class="header-flex">
+        <!-- 搜索框 -->
+        <el-input
+            v-model="input1"
+            class="w-50 m-2"
+            size="small"
+            placeholder="搜索"
+            :prefix-icon="Search"
+        />
+
+        <!-- +按钮 -->
+        <el-button @click="showModal = true" size="small" class="chat-plus">
+          <el-icon :size="12" ><Plus /></el-icon>
+        </el-button>
       </div>
+
+      <!-- 用户列表 -->
+<!--      <div class="user-list-scrollable">-->
+        <el-scrollbar>
+
+        <div
+            v-for="user in filteredUsers"
+            :key="user.id"
+            class="user-item"
+            :class="{ selected: user.id === selectedUser.id }"
+            @click="selectUser(user)"
+        >
+          <el-avatar :src="user.avatar"></el-avatar>
+          <span>{{ user.username }}</span>
+        </div>
+        </el-scrollbar>
+
+<!--      </div>-->
     </el-aside>
+
+    <!-- 新增的模态框 -->
+    <el-dialog v-model="showModal" title="选择用户">
+      <el-transfer
+          v-model="selectedUsers"
+          :data="state.transferData"
+          :titles="['好友列表', '选择联系人']"
+          filterable
+          :filter-placeholder="'搜索用户'"
+      ></el-transfer>
+
+      <template v-slot:footer>
+        <el-button @click="toggleModal">取 消</el-button>
+        <el-button @click="onConfirmTransfer">完 成</el-button>
+      </template>
+    </el-dialog>
+
     <el-container class="chat-container">
       <el-header class="header" v-if="selectedUser">
         {{ selectedUser.name }}
         <span v-if="isTyping">...正在输入</span>
       </el-header>
+      <el-scrollbar>
+
       <el-main class="messages" ref="messagesContainer">
-        <div v-for="(msg, index) in currentChatMessages" :key="index" :class="msg.type">
-          <el-avatar :src="msg.type === 'sent' ? 'https://placekitten.com/49/49' : selectedUser.avatar" class="chat-avatar"></el-avatar>
-          <div class="message">{{ msg.content }}</div>
-        </div>
+          <div v-for="(msg, index) in currentChatMessages" :key="index" :class="msg.type">
+            <el-avatar :src="msg.type === 'sent' ? 'https://placekitten.com/49/49' : selectedUser.avatar" class="chat-avatar"></el-avatar>
+            <div class="message">{{ msg.content }}</div>
+          </div>
       </el-main>
+      </el-scrollbar>
+
       <el-footer class="input-container">
         <div class="toolbar">
           <el-button class="icon-btn"><el-icon><WalletFilled /></el-icon></el-button>
@@ -37,21 +89,87 @@
 </template>
 
 <script>
-import { reactive, toRefs, onBeforeUnmount, onMounted, computed, nextTick } from "vue";
-import { WalletFilled, Folder, ChatRound } from "@element-plus/icons-vue";
+import { reactive, toRefs, onBeforeUnmount, onMounted, computed, nextTick, ref } from "vue";
+import {WalletFilled, Folder, ChatRound, Search} from "@element-plus/icons-vue";
 import { getChatUsers, fetchChatHistoryForUser } from "@/services/chatService";
+import {Plus} from '@element-plus/icons';
 
 export default {
-  components: { WalletFilled, Folder, ChatRound },
+  computed: {
+    Search() {
+      return Search
+    }
+  },
+  components: { WalletFilled, Folder, ChatRound, Plus },
 
   setup() {
+
+    const showModal = ref(false);
+    const input1 = ref('');
+    const selectedUser = ref({});
+    const selectedUsers = ref([]);
+
     const state = reactive({
       message: '',
       chatMessages: {},
       users: [],
       selectedUser: { id: null, username: '', avatar: '', chat_room_id: null },
-      socket: null
+      socket: null,
+      filteredUsers: [
+        { id: '1', username: 'Alice', avatar: 'path_to_avatar_1.jpg' },
+        { id: '2', username: 'Bob', avatar: 'path_to_avatar_2.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
+      ],  // 假设这是你的用户列表
+      transferData: []   // 假设这是你的穿梭框数据
     });
+
+    // 创建穿梭框数据
+    const createTransferData = () => {
+      state.transferData = state.filteredUsers.map(user => ({
+        key: user.id,
+        label: user.username,
+        disabled: false
+      }));
+    };
+
+    const toggleModal = () => {
+      showModal.value = !showModal.value;
+    };
+
+    // 选择用户
+    // const selectUser = (user) => {
+    //   selectedUser.value = user;
+    // };
+
+    // 确认穿梭框的选择
+    const onConfirmTransfer = () => {
+      console.log("Selected users in Transfer:", selectedUsers.value);
+      toggleModal();
+    };
+
+    // 调用创建穿梭框数据的函数
+    createTransferData();
 
     const currentChatMessages = computed(() => {
       return state.chatMessages[state.selectedUser?.chat_room_id] || [];
@@ -78,7 +196,9 @@ export default {
     };
 
     const initWebSocket = () => {
-      state.socket = new WebSocket("ws://120.46.80.249:8051/ws");
+      // state.socket = new WebSocket("ws://120.46.80.249:8051/ws");
+      const token = localStorage.getItem('token');
+      state.socket = new WebSocket(`ws://127.0.0.1:8051/ws?token=${token}`);
 
       state.socket.onopen = (event) => {
         console.log("WebSocket 已打开：", event);
@@ -101,16 +221,11 @@ export default {
 
         try {
           const data = JSON.parse(event.data);
-
           console.log("Parsed message data:", data);
 
           if (data.senderId === userId) {
             console.log("Message sent by the current user. Ignoring.");
             return;
-          }
-
-          if (data.ToUserID !== userId) {
-            return
           }
 
           const chatRoomId = data.ChatRoomID;
@@ -119,13 +234,10 @@ export default {
           }
 
           state.chatMessages[chatRoomId].push({ content: data.Content, type: 'received' });
-
         } catch (error) {
           console.error("解析消息错误:", error);
         }
       };
-
-
 
       state.socket.onerror = (error) => {
         console.error("WebSocket 出错：", error);
@@ -190,14 +302,18 @@ export default {
       selectUser,
       fetchChatUsers,
       initWebSocket,
-      fetchChatHistory
+      fetchChatHistory,
+      input1,
+      showModal,
+      toggleModal,
+      onConfirmTransfer,
+      selectedUser,
+      selectedUsers,
+      state
     };
   }
 };
 </script>
-
-
-
 
 <style scoped>
 .wechat-container {
@@ -222,14 +338,6 @@ export default {
   font-size: 16px; /* 调整文字大小，如果需要可以适当调整 */
 }
 
-
-.user-list {
-  width: 250px;
-  padding: 20px;
-  border-right: 1px solid #e4e7ed;
-  background-color: #f5f7fa;
-  overflow-y: scroll;
-}
 
 .user-item {
   display: flex;
@@ -260,17 +368,6 @@ export default {
   padding: 10px;
 }
 
-.received, .sent {
-  display: flex;
-  align-items: center;
-  padding: 5px 0;
-  margin-bottom: 10px;
-}
-
-.sent {
-  justify-content: flex-end;
-}
-
 .sent .chat-avatar {
   order: 2;
 }
@@ -288,7 +385,6 @@ export default {
   border-radius: 5px 15px 15px 15px;
   border: 1px solid #e9e9e9;  /* 微信的对话气泡有一个细细的边 */
 }
-
 
 .chat-avatar {
   margin: 0 10px;
@@ -371,43 +467,43 @@ export default {
   border-bottom: 0;
 }
 
-
-/* 为用户列表和消息列表都预留滚动条的宽度 */
-.messages, .user-list {
-  padding-right: 8px; /* 和滚动条的宽度相等的内边距 */
-  box-sizing: content-box; /* 使用内容盒模型，确保总宽度不变 */
-}
-
-/* WebKit浏览器（如Chrome、Safari）的滚动条样式 */
-.messages::-webkit-scrollbar, .user-list::-webkit-scrollbar {
-  width: 8px; /* 滚动条的宽度 */
-}
-
-/* 滚动条的轨迹（背景） */
-.messages::-webkit-scrollbar-track, .user-list::-webkit-scrollbar-track {
-  border-radius: 10px;
-  background: transparent; /* 设置为透明 */
-}
-
-/* 滚动条的滑块样式 */
-.messages::-webkit-scrollbar-thumb, .user-list::-webkit-scrollbar-thumb {
-  background-color: transparent; /* 默认透明 */
-  border-radius: 10px; /* 圆角 */
-}
-
-/* 当鼠标放在元素上时，显示滚动条滑块 */
-.messages:hover::-webkit-scrollbar-thumb, .user-list:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2); /* 微信的滚动条颜色 */
-}
-
-/* Firefox浏览器的滚动条样式 */
-.messages, .user-list {
-  scrollbar-width: thin; /* Firefox支持的滚动条宽度属性 */
-  scrollbar-color: transparent transparent; /* 默认透明 */
-}
-
-.messages:hover, .user-list:hover {
+.messages:hover {
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent; /* 鼠标悬停时，滑块变色 */
+}
+
+.header-flex {
+  position: sticky;              /* 使用 sticky 定位 */
+  top: 0;
+  z-index: 1000;                   /* 将其置于最上层 */
+  background-color: #f5f5f5;      /* 使用淡灰色背景 */
+  border-bottom: 1px solid #e0e0e0; /* 添加一个底边框 */
+  display: flex;
+  justify-content: space-between; /* 在元素之间留出空间 */
+  align-items: center;            /* 垂直居中 */
+  height: 60px;                   /* 调整高度以适应内容 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 底部稍微的阴影 */
+  font-size: 16px;                /* 调整文字大小 */
+  padding: 0;                /* 在左右两边添加一些内部间距 */
+  margin-top: 0;                  /* 确保顶部没有外部间距 */
+  width: 100%;                    /* 填满父容器 */
+}
+
+.chat-plus {
+  margin-left: 5px;
+}
+
+.aside {
+  /* 对于大部分的浏览器 */
+  overflow-y: scroll;
+  scrollbar-width: none; /* Firefox */
+
+  /* 对于Webkit浏览器 */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  border-right: 1px solid #e4e7ed;
+  background-color: #f5f7fa;
 }
 
 
