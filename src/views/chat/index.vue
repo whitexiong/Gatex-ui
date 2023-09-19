@@ -91,7 +91,7 @@
 <script>
 import { reactive, toRefs, onBeforeUnmount, onMounted, computed, nextTick, ref } from "vue";
 import {WalletFilled, Folder, ChatRound, Search} from "@element-plus/icons-vue";
-import { getChatUsers, fetchChatHistoryForUser } from "@/services/chatService";
+import { getChatUsers, fetchChatHistoryForUser, fetchChatWindow, createChatRoom  } from "@/services/chatService";
 import {Plus} from '@element-plus/icons';
 
 export default {
@@ -115,38 +115,14 @@ export default {
       users: [],
       selectedUser: { id: null, username: '', avatar: '', chat_room_id: null },
       socket: null,
-      filteredUsers: [
-        { id: '1', username: 'Alice', avatar: 'path_to_avatar_1.jpg' },
-        { id: '2', username: 'Bob', avatar: 'path_to_avatar_2.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-        { id: '3', username: 'Charlie', avatar: 'path_to_avatar_3.jpg' },
-      ],  // 假设这是你的用户列表
+      filteredUsers: [],  // 假设这是你的用户列表
       transferData: []   // 假设这是你的穿梭框数据
     });
 
     // 创建穿梭框数据
     const createTransferData = () => {
-      state.transferData = state.filteredUsers.map(user => ({
+      console.log(state.users)
+      state.transferData = state.users.map(user => ({
         key: user.id,
         label: user.username,
         disabled: false
@@ -162,22 +138,16 @@ export default {
     //   selectedUser.value = user;
     // };
 
-    // 确认穿梭框的选择
-    const onConfirmTransfer = () => {
-      console.log("Selected users in Transfer:", selectedUsers.value);
-      toggleModal();
-    };
-
     // 调用创建穿梭框数据的函数
-    createTransferData();
 
     const currentChatMessages = computed(() => {
       return state.chatMessages[state.selectedUser?.chat_room_id] || [];
     });
 
-    onMounted(() => {
+    onMounted(async () => {
       initWebSocket();
-      fetchChatUsers();
+      await fetchChatUsers();
+      createTransferData();
     });
 
     onBeforeUnmount(() => {
@@ -189,7 +159,9 @@ export default {
     const fetchChatUsers = async () => {
       try {
         const response = await getChatUsers();
-        state.users = response.data;
+        if (response.data && Array.isArray(response.data)) {
+          state.users = response.data;
+        }
       } catch (error) {
         console.error("Error fetching chat users:", error);
       }
@@ -281,19 +253,42 @@ export default {
       }
     };
 
-    const selectUser = (user) => {
+    const selectUser = async (user) => {
       state.selectedUser = user;
-      fetchChatHistory(user.id);
-    };
 
-    const fetchChatHistory = async (userId) => {
-      try {
-        const response = await fetchChatHistoryForUser(userId);
-        state.chatMessages[state.selectedUser.chat_room_id] = response.data;
-      } catch (error) {
-        console.error("Error fetching chat history:", error);
+      if(user.chat_room_id) {
+        try {
+          const response = await fetchChatWindow(user.chat_room_id);
+          state.chatMessages[user.chat_room_id] = response.data.Messages.map(msg => ({
+            content: msg.Content,
+            type: msg.SenderID === user.id ? 'received' : 'sent'
+          }));
+        } catch (error) {
+          console.error("Error fetching chat window data:", error);
+        }
+      } else {
+        fetchChatHistoryForUser(user.id);
       }
     };
+
+
+    const onConfirmTransfer = async () => {
+      try {
+        const chatRoomData = {
+          Name: "New Chat Room", // 你可以提供一个方法让用户输入聊天室的名字
+          Description: "",      // 根据需要设定
+          RoomType: 1           // 根据需要设定
+        };
+        const response = await createChatRoom(chatRoomData);
+
+        // 你可能还想要处理response，比如说更新聊天室列表或者立即进入新创建的聊天室
+
+        toggleModal();
+      } catch (error) {
+        console.error("Error creating chat room:", error);
+      }
+    };
+
 
     return {
       ...toRefs(state),
@@ -302,7 +297,7 @@ export default {
       selectUser,
       fetchChatUsers,
       initWebSocket,
-      fetchChatHistory,
+      fetchChatHistoryForUser,
       input1,
       showModal,
       toggleModal,
