@@ -7,36 +7,36 @@ export const getDashboardData = () => {
 }
 
 export const UserLogin = (username, password) => {
-    return axios.post(`${BASE_URL}/user/login`, {
+    return axios.post(`${BASE_URL}/setting/user/login`, {
         username: username,
         password: password
     });
 }
 
 export const UserLogout = () => {
-    return axios.post(`${BASE_URL}/user/logout`);
+    return axios.post(`${BASE_URL}/setting/user/logout`);
 }
 
 export const getList = () => {
-    return axios.get(`${BASE_URL}/user/list`);
+    return axios.get(`${BASE_URL}/setting/user/list`);
 }
 
 export const add = (userData) => {
-    return axios.post(`${BASE_URL}/user/add`, userData);
+    return axios.post(`${BASE_URL}/setting/user/add`, userData);
 }
 
 export const detail = (userId) => {
-    return axios.get(`${BASE_URL}/user/detail/${userId}`);
+    return axios.get(`${BASE_URL}/setting/user/detail/${userId}`);
 }
 
 export const update = (userId, updatedData) => {
-    return axios.post(`${BASE_URL}/user/update/${userId}`, updatedData);
+    return axios.post(`${BASE_URL}/setting/user/update/${userId}`, updatedData);
 }
 
 export const deletedById = (userId) => {
-    return axios.get(`${BASE_URL}/user/delete/${userId}`);
+    return axios.get(`${BASE_URL}/setting/user/delete/${userId}`);
 }
 
 export const GetUserMenus = () => {
-    return axios.get(`${BASE_URL}/user/menus`);
+    return axios.get(`${BASE_URL}/setting/user/menus`);
 }

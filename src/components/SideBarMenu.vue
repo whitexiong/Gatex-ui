@@ -54,6 +54,8 @@ export default {
 <style scoped>
 .el-menu-vertical {
   width: 200px;
+  height: 100vh;  /* 设置高度为浏览器窗口的高度 */
+  overflow-y: auto;  /* 如果内容超过该高度，它将变为可滚动 */
 }
 
 .el-menu-vertical.el-menu--collapse {
@@ -69,4 +71,6 @@ export default {
 .nav-logo {
   margin-right: 10px;
 }
+
+
 </style>

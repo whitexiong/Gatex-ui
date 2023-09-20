@@ -1,20 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import MainLayout from '@/components/MainLayout.vue';
-import Dashboard from '@/components/Dashboard.vue';
-import UserLogin from '@/components/UserLogin.vue';
-import MenuManagement from '@/views/menu/index.vue';
-import role from '@/views/role/index.vue';
-import route from '@/views/route/index.vue';
-import user from '@/views/user/index.vue';
-import chat from '@/views/chat/index.vue';
 import axios from "axios";
+import settingRoutes from "@/router/settingRoutes";
+import chatRoutes from "@/router/chatRoutes";
+import openvpnRoutes from "@/router/openvpnRoutes";
+import UserLogin from '@/components/UserLogin.vue';
+import Dashboard from "@/components/Dashboard.vue";
+
 
 const routes = [
-    {
-        path: '/login',
-        name: 'UserLogin',
-        component: UserLogin
-    },
     {
         path: '/',
         component: MainLayout,
@@ -27,79 +21,18 @@ const routes = [
                     requiresAuth: true
                 }
             },
-            {
-                path: 'menu',
-                component: MenuManagement,
-                children: [
-                    {
-                        path: 'index',
-                        name: 'MenuIndex',
-                        component: MenuManagement,
-                        meta: {
-                            requiresAuth: true
-                        }
-                    }
-                ]
-            },
-            {
-                path: 'role',
-                component: role,
-                children: [
-                    {
-                        path: 'index',
-                        name: 'RoleIndex',
-                        component: role,
-                        meta: {
-                            requiresAuth: true
-                        }
-                    },
-                ]
-            },
-            {
-                path: 'route',
-                component: route,
-                children: [
-                    {
-                        path: 'index',
-                        name: 'RouteIndex',
-                        component: route,
-                        meta: {
-                            requiresAuth: true
-                        }
-                    }
-                ]
-            },
-            {
-                path: 'user',
-                component: user,
-                children: [
-                    {
-                        path: 'index',
-                        name: 'UserIndex',
-                        component: user,
-                        meta: {
-                            requiresAuth: true
-                        }
-                    }
-                ]
-            },
-            {
-                path: 'chat',
-                component: chat,
-                children: [
-                    {
-                        path: 'index',
-                        name: 'ChatIndex',
-                        component: chat,
-                        meta: {
-                            requiresAuth: true
-                        }
-                    }
-                ]
-            },
+            ...settingRoutes,
+            ...chatRoutes,
+            ...openvpnRoutes,
         ]
     },
+    {
+        path: '/login',
+        name: 'UserLogin',
+        component: UserLogin
+    },
 ];
+
 
 const router = createRouter({
     history: createWebHistory(process.env.BASE_URL),

@@ -51,5 +51,12 @@ export default {
 .icon-size {
   width: 1em;
   height: 1em;
+  transform: translateX(-8px);
 }
+
+/* 更改子菜单中的菜单项背景颜色 */
+.el-sub-menu .el-menu-item {
+  background-color: #E1E8EE;  /* 或您想要的其他颜色 */
+}
+
 </style>

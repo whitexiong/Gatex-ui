@@ -49,8 +49,17 @@ export default {
 
 <style scoped>
 .dark-mode {
-  /* 你的暗黑模式样式 */
-  background-color: #333; /* 这只是一个示例，根据你的需要进行调整 */
+  background-color: #333;
   color: white;
 }
+
+.sidebar {
+  background-color: #E1E8EE;
+}
+
+/* 为导航栏设置背景颜色 */
+.navbar {
+  background-color: #E1E8EE;
+}
+
 </style>

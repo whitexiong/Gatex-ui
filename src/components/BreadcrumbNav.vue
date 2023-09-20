@@ -2,9 +2,9 @@
   <div class="breadcrumb-container">
     <el-breadcrumb separator="/">
       <el-breadcrumb-item
-          v-for="item in breadcrumbs"
+          v-for="(item, index) in breadcrumbs"
           :key="item.path"
-          :to="{ path: item.path }">
+          :to="index !== 0 && index !== breadcrumbs.length - 1 ? { path: item.path } : undefined">
         {{ item.name }}
       </el-breadcrumb-item>
     </el-breadcrumb>
@@ -28,22 +28,20 @@ export default {
   },
 
   methods: {
-    findBreadcrumbPath(targetPath, data, result) {
+    findBreadcrumbPath(targetPath, data, result, level = 1) {
       for (let i = 0; i < data.length; i++) {
-        if (targetPath.includes(data[i].path)) {
-          result.push({ name: data[i].name, path: data[i].path });
-
-          // 如果当前节点匹配，直接返回true
+        if (targetPath === data[i].path) {
+          result.push({ name: data[i].name, path: data[i].path, level });
           return true;
         }
-        if (data[i].children && data[i].children.length && this.findBreadcrumbPath(targetPath, data[i].children, result)) {
-          // 如果子节点中找到了匹配项，将当前节点也添加到结果中
-          result.push({ name: data[i].name, path: data[i].path });
+        if (data[i].children && data[i].children.length && this.findBreadcrumbPath(targetPath, data[i].children, result, level + 1)) {
+          result.push({ name: data[i].name, path: data[i].path, level }); // 添加当前层级到面包屑
           return true;
         }
       }
       return false;
     }
+
   }
 };
 </script>

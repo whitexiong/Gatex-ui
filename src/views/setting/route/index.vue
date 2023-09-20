@@ -52,17 +52,13 @@
               <el-input v-model="Route.Name" placeholder="请输入名称"></el-input>
             </el-form-item>
 
-            <!-- 路径 -->
-<!--            <el-form-item label="路径">-->
-<!--              <el-input v-model="Route.Path" placeholder="请输入路径"></el-input>-->
-<!--            </el-form-item>-->
-
             <el-form-item label="路径">
               <el-autocomplete
                   v-model="Route.Path"
                   :fetch-suggestions="querySearchAsync"
                   placeholder="请输入菜单路径"
                   @select="handleSelect"
+                  style="width: 100%;"
               >
                 <template #suffix>
                   <el-icon class="el-input__icon" @click="handleIconClick">

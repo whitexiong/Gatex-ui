@@ -60,6 +60,7 @@
                   :fetch-suggestions="querySearchAsync"
                   placeholder="请输入菜单路径"
                   @select="handleSelect"
+                  style="width: 100%;"
               >
                 <template #suffix>
                   <el-icon class="el-input__icon" @click="handleIconClick">
