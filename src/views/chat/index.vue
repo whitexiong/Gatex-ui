@@ -19,23 +19,19 @@
         </el-button>
       </div>
 
-      <!-- 用户列表 -->
-<!--      <div class="user-list-scrollable">-->
-        <el-scrollbar>
+      <!-- 聊天窗口 -->
+      <el-scrollbar>
+        <div v-for="room in chatRooms" :key="room.ID" class="room-item"
+             :class="{ selected: room.ID === selectedRoom.ID }"
+             @click="selectRoom(room)">
 
-        <div
-            v-for="user in filteredUsers"
-            :key="user.id"
-            class="user-item"
-            :class="{ selected: user.id === selectedUser.id }"
-            @click="selectUser(user)"
-        >
-          <el-avatar :src="user.avatar"></el-avatar>
-          <span>{{ user.username }}</span>
+            <div class="avatars-group">
+              <img v-for="user in room.Users.slice(0, 3)" :key="user.ID" :src="user.AvatarUrl" alt="User Avatar" class="avatar-group-item"/>
+            </div>
+            <span>{{ room.Name }}</span>
         </div>
-        </el-scrollbar>
+      </el-scrollbar>
 
-<!--      </div>-->
     </el-aside>
 
     <!-- 新增的模态框 -->
@@ -61,12 +57,21 @@
       </el-header>
       <el-scrollbar>
 
-      <el-main class="messages" ref="messagesContainer">
-          <div v-for="(msg, index) in currentChatMessages" :key="index" :class="msg.type">
-            <el-avatar :src="msg.type === 'sent' ? 'https://placekitten.com/49/49' : selectedUser.avatar" class="chat-avatar"></el-avatar>
+        <el-main class="messages" ref="messagesContainer">
+          <div v-for="(msg, index) in currentChatMessages" :key="index"
+               :class="['message-container', msg.type]">
+            <el-avatar v-if="msg.type === 'received'"
+                       :src="selectedUser.avatar"
+                       class="chat-avatar"></el-avatar>
+
             <div class="message">{{ msg.content }}</div>
+
+            <el-avatar v-if="msg.type === 'sent'"
+                       :src="'https://placekitten.com/49/49'"
+                       class="chat-avatar"></el-avatar>
           </div>
-      </el-main>
+        </el-main>
+
       </el-scrollbar>
 
       <el-footer class="input-container">
@@ -108,6 +113,8 @@ export default {
     const input1 = ref('');
     const selectedUser = ref({});
     const selectedUsers = ref([]);
+    const chatRooms = ref([]);
+    const currentChatMessages = ref([]);
 
     const state = reactive({
       message: '',
@@ -116,7 +123,8 @@ export default {
       selectedUser: { id: null, username: '', avatar: '', chat_room_id: null },
       socket: null,
       filteredUsers: [],  // 假设这是你的用户列表
-      transferData: []   // 假设这是你的穿梭框数据
+      transferData: [],   // 假设这是你的穿梭框数据
+      selectedRoom: { ID: null, Name: '', Description: '', Users: [], Messages: []}
     });
 
     // 创建穿梭框数据
@@ -133,22 +141,25 @@ export default {
       showModal.value = !showModal.value;
     };
 
-    // 选择用户
-    // const selectUser = (user) => {
-    //   selectedUser.value = user;
-    // };
-
-    // 调用创建穿梭框数据的函数
-
-    const currentChatMessages = computed(() => {
-      return state.chatMessages[state.selectedUser?.chat_room_id] || [];
-    });
-
     onMounted(async () => {
       initWebSocket();
       await fetchChatUsers();
       createTransferData();
+      await fetchChatWindowsByUser();
     });
+
+    const fetchChatWindowsByUser = async () => {
+      try {
+        const response = await fetchChatWindow();
+        if (response.data && Array.isArray(response.data)) {
+          chatRooms.value = response.data
+          console.log(chatRooms.value)
+        }
+      } catch (error) {
+        console.error("Error fetching chat windows:", error);
+      }
+    };
+
 
     onBeforeUnmount(() => {
       if (state.socket) {
@@ -195,8 +206,9 @@ export default {
           const data = JSON.parse(event.data);
           console.log("Parsed message data:", data);
 
-          if (data.senderId === userId) {
+          if (userId === data.SenderID) {
             console.log("Message sent by the current user. Ignoring.");
+            currentChatMessages.value.push({ content: data.Content, type: 'sent' });
             return;
           }
 
@@ -205,7 +217,9 @@ export default {
             state.chatMessages[chatRoomId] = [];
           }
 
-          state.chatMessages[chatRoomId].push({ content: data.Content, type: 'received' });
+          if (chatRoomId === state.selectedRoom.ID) {
+            currentChatMessages.value.push({ content: data.Content, type: 'received' });
+          }
         } catch (error) {
           console.error("解析消息错误:", error);
         }
@@ -221,7 +235,8 @@ export default {
     };
 
     const sendMessage = () => {
-      if (state.message.trim() && state.selectedUser && state.selectedUser.id) {
+      if (state.message.trim() && state.selectedRoom && state.selectedRoom.ID) {
+        console.log(11);
         const userData = JSON.parse(localStorage.getItem('userData'));
         const senderId = userData ? userData.id : null;
         if (!senderId) {
@@ -231,57 +246,56 @@ export default {
 
         const messageBody = {
           content: state.message,
-          toUserId: state.selectedUser.id,
-          chatRoomId: state.selectedUser.chat_room_id,
+          chatRoomId: state.selectedRoom.ID,  // Use room ID from selectedRoom
           senderId: senderId
         };
 
         const payload = {
           type: "text",
-          chatId: state.selectedUser.chat_room_id,
+          chatId: state.selectedRoom.ID,  // Use room ID from selectedRoom
           body: JSON.stringify(messageBody)
         };
 
         state.socket.send(JSON.stringify(payload));
 
-        if (!state.chatMessages[state.selectedUser.chat_room_id]) {
-          state.chatMessages[state.selectedUser.chat_room_id] = [];
+        if (!state.chatMessages[state.selectedRoom.ID]) {
+          state.chatMessages[state.selectedRoom.ID] = [];
         }
-        state.chatMessages[state.selectedUser.chat_room_id].push({ content: state.message, type: 'sent' });
+        state.chatMessages[state.selectedRoom.ID].push({ content: state.message, type: 'sent' });
 
         state.message = '';
       }
     };
 
-    const selectUser = async (user) => {
-      state.selectedUser = user;
 
-      if(user.chat_room_id) {
-        try {
-          const response = await fetchChatWindow(user.chat_room_id);
-          state.chatMessages[user.chat_room_id] = response.data.Messages.map(msg => ({
-            content: msg.Content,
-            type: msg.SenderID === user.id ? 'received' : 'sent'
-          }));
-        } catch (error) {
-          console.error("Error fetching chat window data:", error);
-        }
-      } else {
-        fetchChatHistoryForUser(user.id);
-      }
+    const selectRoom = (room) => {
+      console.log(room);
+      state.selectedRoom = room;
+
+      // Determine the message type for each message in the selected room.
+      const userData = JSON.parse(localStorage.getItem('userData'));
+      const currentUserId = userData ? userData.id : null;
+
+      currentChatMessages.value = state.selectedRoom.Messages.map(msg => {
+        return {
+          content: msg.Content,
+          type: msg.SenderID === currentUserId ? 'sent' : 'received'
+        };
+      });
     };
 
 
     const onConfirmTransfer = async () => {
       try {
+        const selectedUserIds = selectedUsers.value; // 这里获取已选择的用户ID
+
         const chatRoomData = {
-          Name: "New Chat Room", // 你可以提供一个方法让用户输入聊天室的名字
-          Description: "",      // 根据需要设定
-          RoomType: 1           // 根据需要设定
+          Name: "新的聊天窗口",
+          Description: "",
+          RoomType: 1,
+          UserIDs: selectedUserIds  // 添加选中的用户ID
         };
         const response = await createChatRoom(chatRoomData);
-
-        // 你可能还想要处理response，比如说更新聊天室列表或者立即进入新创建的聊天室
 
         toggleModal();
       } catch (error) {
@@ -289,12 +303,14 @@ export default {
       }
     };
 
+    const getOtherUser = async (users) => {
+      return users[0];
+    };
 
     return {
       ...toRefs(state),
       currentChatMessages,
       sendMessage,
-      selectUser,
       fetchChatUsers,
       initWebSocket,
       fetchChatHistoryForUser,
@@ -304,7 +320,10 @@ export default {
       onConfirmTransfer,
       selectedUser,
       selectedUsers,
-      state
+      state,
+      selectRoom,
+      chatRooms,
+      getOtherUser
     };
   }
 };
@@ -334,7 +353,7 @@ export default {
 }
 
 
-.user-item {
+.room-item {
   display: flex;
   align-items: center;
   padding: 10px;
@@ -342,15 +361,15 @@ export default {
   border-bottom: 1px solid #e4e7ed;
 }
 
-.user-item:hover {
+.room-item:hover {
   background-color: #e4e7ed;
 }
 
-.user-item.selected {
+.room-item.selected {
   background-color: #e4e7ed;
 }
 
-.user-item span {
+.room-item span {
   margin-left: 10px;
 }
 
@@ -359,7 +378,6 @@ export default {
 }
 
 .messages {
-  overflow-y: scroll;
   padding: 10px;
 }
 
@@ -500,6 +518,72 @@ export default {
   border-right: 1px solid #e4e7ed;
   background-color: #f5f7fa;
 }
+
+.avatar, .avatar-group-item {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 10px;
+}
+
+.avatars-group {
+  display: flex;
+  align-items: center;
+}
+
+.avatar-group-item {
+  margin-left: -10px; /* 使头像部分重叠 */
+  z-index: 1;
+}
+
+/* 使第二个和第三个头像位于第一个头像之后 */
+.avatar-group-item:nth-child(2) {
+  z-index: 2;
+}
+
+.avatar-group-item:nth-child(3) {
+  z-index: 3;
+}
+
+/* 基础样式 */
+.message-container {
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.message {
+  padding: 10px;
+  border-radius: 10px;
+  max-width: 70%;
+}
+
+/* 左侧（接收的消息） */
+.message-container.received {
+  justify-content: flex-start;
+}
+
+.message-container.received .message {
+  background-color: #eee; /* 淡灰色背景 */
+}
+
+/* 右侧（发送的消息） */
+.message-container.sent {
+  justify-content: flex-end;
+}
+
+.message-container.sent .message {
+  background-color: #00bfff; /* 淡蓝色背景 */
+}
+
+.chat-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin: 0 10px;
+}
+
 
 
 </style>

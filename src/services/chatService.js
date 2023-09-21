@@ -5,12 +5,12 @@ export const getChatUsers = () => {
     return axios.get(`${BASE_URL}/chat/users`);
 }
 
-export const fetchChatHistoryForUser = (userId) => {
-    return axios.get(`${BASE_URL}/chat/history/${userId}`);
+export const fetchChatHistoryForUser = (chatRoomId) => {
+    return axios.get(`${BASE_URL}/chat/history/${chatRoomId}`);
 }
 
-export const fetchChatWindow = (roomId) => {
-    return axios.get(`${BASE_URL}/chat/rooms/${roomId}`);
+export const fetchChatWindow = () => {
+    return axios.get(`${BASE_URL}/chat/rooms`);
 }
 
 export const createChatRoom = (chatRoomData) => {

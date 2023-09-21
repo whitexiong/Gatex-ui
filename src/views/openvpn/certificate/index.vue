@@ -1,33 +1,40 @@
 <template>
   <div>
-    <!-- 搜索和刷新区域 -->
     <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
 
-      <!-- 搜索部分 -->
       <div style="display: flex; align-items: center;">
         <el-input
-            placeholder="请输入菜单名称"
+            v-model="searchText"
+            placeholder="请输入证书名"
             style="width: 200px;"
-            @keyup.enter="getList">
+            @keyup.enter="listData">
           <template #append>
-            <el-button @click="fetchMenus" style="margin-right: 5px;">
-              <el-icon><Search /></el-icon>
+            <el-button @click="listData" style="margin-right: 5px;">
+              <el-icon>
+                <Search/>
+              </el-icon>
             </el-button>
             <el-button @click="resetSearch">
-              <el-icon><Refresh /></el-icon>
+              <el-icon>
+                <Refresh/>
+              </el-icon>
             </el-button>
           </template>
         </el-input>
       </div>
 
-      <!-- 操作部分 -->
       <div style="display: flex; align-items: center;">
         <el-button @click="refresh">
-          <el-icon><RefreshRight /></el-icon>
+          <el-icon>
+            <RefreshRight/>
+          </el-icon>
         </el-button>
 
         <el-button @click="addNew" style="margin-left: 10px;">
-          <el-icon><Plus /></el-icon>新增
+          <el-icon>
+            <Plus/>
+          </el-icon>
+          新增证书
         </el-button>
         <ADialog
             v-model="dialogVisible"
@@ -35,121 +42,42 @@
             @confirm="saveData"
             @reset="resetData"
         >
-          <el-form ref="MenuForm" :model="Menu" label-width="80px" style="width: 100%;">
-            <!-- 父菜单 -->
-            <el-form-item label="上级菜单">
-              <el-cascader
-                  v-model="Menu.ParentID"
-                  :options="options"
-                  placeholder="请选择菜单"
-                  :props="anyProps"
-                  @change="onSelected"
-                  clearable
-              ></el-cascader>
+          <el-form ref="CertificateForm" :model="Certificate" label-width="80px" style="width: 100%;">
+            <el-form-item label="证书名">
+              <el-input v-model="Certificate.ClientName" placeholder="请输入证书名"></el-input>
             </el-form-item>
 
-            <!-- 名称 -->
-            <el-form-item label="名称">
-              <el-input v-model="Menu.Name" placeholder="请输入菜单名称"></el-input>
-            </el-form-item>
-
-            <!-- 路径 -->
-            <el-form-item label="路径">
-              <el-autocomplete
-                  v-model="Menu.Path"
-                  :fetch-suggestions="querySearchAsync"
-                  placeholder="请输入菜单路径"
-                  @select="handleSelect"
-                  style="width: 100%;"
-              >
-                <template #suffix>
-                  <el-icon class="el-input__icon" @click="handleIconClick">
-                    <edit />
-                  </el-icon>
-                </template>
-                <template #default="{ item }">
-                  <div class="flex-container">
-                    <div class="value">{{ item.value }}</div>
-                    <div class="name">{{ item.name }}</div>
-                  </div>
-                </template>
-              </el-autocomplete>
-            </el-form-item>
-
-            <!-- 图标选择 -->
-            <el-form-item label="图标">
-              <div class="icon-input-container" @click="openIconSelector">
-                <component :is="getIconComponent(displayIcon)" class="display-icon" v-if="displayIcon" />
-                <span v-else class="icon-placeholder">选择图标</span>
-              </div>
-              <el-input v-model="displayIcon" readonly v-if="false"></el-input>
-
-              <el-dialog v-model="iconDialogVisible" width="50%" hight="50%">
-                <div class="icon-grid">
-                  <div v-for="icon in paginatedIcons" :key="icon">
-                    <div @click="selectIcon(icon)" class="icon-container">
-                      <component :is="getIconComponent(icon)" class="selectable-icon" />
-                      <span>{{ icon }}</span>
-                    </div>
-                  </div>
-                </div>
-                <el-pagination
-                    @current-change="handlePageChange"
-                    :current-page="currentPage"
-                    :page-size="pageSize"
-                    layout="prev, pager, next"
-                    :total="allIcons.length"
-                >
-                </el-pagination>
-              </el-dialog>
-            </el-form-item>
-
-            <!-- 排序 -->
-            <el-form-item label="排序">
-              <el-input-number v-model="Menu.Order" :min="0"></el-input-number>
-            </el-form-item>
-
-            <el-form-item label="状态">
-              <el-switch
-                  v-model="Menu.Status"
-                  :active-value="1"
-                  :inactive-value="0"
-              ></el-switch>
+            <el-form-item label="密码">
+              <el-input
+                  v-model="Certificate.Password"
+                  :type="showPassword ? 'text' : 'password'"
+                  placeholder="请输入密码"
+                  suffix-icon="el-icon-view"
+                  @click:append="togglePasswordVisibility">
+              </el-input>
             </el-form-item>
           </el-form>
         </ADialog>
       </div>
     </div>
 
-    <!-- 表格区域 -->
-    <el-table :data="Menus" row-key="id" lazy :load="loadTree" style="width: 1980px; height: 1000px" border default-expand-all>
-      <el-table-column label="菜单名称">
-        <template #default="scope">
-          <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">{{ scope.row.name }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="图标" align="center" header-align="center">
-        <template #default="scope">
-        <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">
-            <component :is="getIconComponent(scope.row.icon)" class="display-icon table-icon" v-if="scope.row.icon" />
-        </span>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="菜单链接">
-        <template #default="scope">
-          <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">{{ scope.row.path }}</span>
-        </template>
-      </el-table-column>
-
+    <!-- 证书表格区域 -->
+    <el-table :data="Certificates" row-key="id" style="width: 1980px; height: 1000px" border>
+      <el-table-column label="文件名" prop="filename"></el-table-column>
+      <el-table-column label="通用名称" prop="common_name"></el-table-column>
+      <el-table-column label="颁发者" prop="issuer"></el-table-column>
+      <el-table-column label="有效开始日期" prop="valid_from"></el-table-column>
+      <el-table-column label="有效结束日期" prop="valid_to"></el-table-column>
+      <el-table-column label="序列号" prop="serial_number"></el-table-column>
       <el-table-column label="操作" width="260">
         <template #default="{ row }">
           <div style="display: flex; align-items: center;">
-            <el-button size="small" @click="toggleStatus(row)">
-              {{ row.Status === 1 ? '禁用' : '开启' }}
+            <el-button type="primary" size="small" @click="editClient(row.id)" style="color: black; margin-left: 5px;">
+              编辑
             </el-button>
-            <el-button type="primary" size="small" @click="getDetail(row.id)" style="color: black; margin-left: 5px;">编辑</el-button>
-            <el-button type="danger" size="small" @click="deleted(row.id)" style="color: black; margin-left: 10px;">删除</el-button>
+            <el-button type="danger" size="small" @click="deleteClient(row.id)" style="color: black; margin-left: 10px;">
+              删除
+            </el-button>
           </div>
         </template>
       </el-table-column>
@@ -157,208 +85,76 @@
   </div>
 </template>
 
-
 <script>
-import {ref, onMounted, computed} from 'vue';
-import { getList, detail, add, update, deletedById } from '@/services/menuService';
-import { getPathList } from '@/services/routeService';
-import {Plus, Refresh, RefreshRight, Search, Tools} from "@element-plus/icons-vue";
+import {ref, onMounted} from 'vue';
+import {getList as getRoleList} from '@/services/roleService';
+import {getList as getCertificateList, add, update, detail, deletedById} from '@/services/openvpnCertificateService';
+import {Plus, Refresh, RefreshRight, Search} from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
-import * as icons from '@element-plus/icons';
-import {useCRUD} from "@/composables/useCRUD";
+import {useCRUD} from '@/composables/useCRUD';
 
 export default {
-  components: {Tools, Refresh, Search, Plus, RefreshRight,ADialog},
+  components: {Refresh, Search, Plus, RefreshRight, ADialog},
   setup() {
-    const iconDialogVisible = ref(false);
-    const options = ref([]);
-    const allIcons = Object.keys(icons);
-    const paths = ref([])
-    const initFormData = {
+    const initialCertificate = {
       ID: null,
-      Name: null,
-      Icon: null,
-      Path: null,
-      ParentID: null,
-      Order: 0,
-      Status: null,
-      RouteID: null,
-    }
-
-
-    const apiMethods = {
-      getList,
-      add,
-      update,
-      detail,
-      deletedById,
+      ClientName: '',
+      Password: '',
     };
 
-    const anyProps = {
-      checkStrictly: true,
-      value: 'value',
-      label: 'label',
-      children: 'children'
-    }
-
+    const apiMethods = {
+      getList: getCertificateList,
+      add: add,
+      update: update,
+      detail: detail,
+      deletedById: deletedById
+    };
     const {
-      data: Menus,
-      selected: Menu,
+      data: Certificates,
+      selected: Certificate,
       dialogVisible,
       searchText,
-      currentPage,
-      loadTree,
-      pageSize,
       listData,
       saveData,
       refresh,
       addNew,
       getDetail,
-      deleted,
+      deleted: deleteCertificate,
       resetData,
-      dialogTitle,
-      handlePageChange,
-      toggleStatus,
-    } = useCRUD(apiMethods, initFormData);
+      dialogTitle
+    } = useCRUD(apiMethods, initialCertificate);
 
-    const loadPathsFromServer = async () => {
-      const response = await getPathList();
-      paths.value = response.data;
-    };
-
-    const querySearchAsync = (queryString, cb) => {
-      const results = paths.value.filter(path => typeof path.value === 'string' && path.value.indexOf(queryString) === 0);
-      cb(results);
-    };
-
-    const handleSelect = (item) => {
-      Menu.value.RouteID = parseInt(item.id, 10);
-    };
-
-    const selectedIcon = ref(Menu.value.Icon);
-
-    const transCascader = (Menu) => {
-      return {
-        value: Menu.value,
-        label: Menu.label,
-        children: Menu.children && Menu.children.length
-            ? Menu.children.map(child => transCascader(child))
-            : null
-      };
-    };
-
-    const onSelected = (value) => {
-      if (value && Array.isArray(value) && value.length > 0) {
-        Menu.ParentID = value[value.length - 1];
-      }
-    }
-
-
-    const selectIcon = (icon) => {
-      displayIcon.value = icon;
-      Menu.value.Icon = icon;
-      console.log(Menu.value.Icon)
-    };
+    const allRoles = ref([]);
 
     onMounted(async () => {
       await listData();
-      if (Menus.value) {
-        options.value = Menus.value.map(Menu => transCascader(Menu));
+      const rolesResponse = await getRoleList();
+      if (rolesResponse.data) {
+        allRoles.value = rolesResponse.data;
       }
-      await loadPathsFromServer();
-    });
-
-    const getIconComponent = (icon) => {
-      console.log("是否是有效组件",icons[icon])
-      return icons[icon];
-    };
-
-    const openIconSelector = () => {
-      iconDialogVisible.value = true;
-    };
-
-    const displayIcon = computed({
-      get: () => Menu.value.Icon,
-      set: (value) => {
-        Menu.value.Icon = value;
-        iconDialogVisible.value = false;
-      }
-    });
-
-
-    const paginatedIcons = computed(() => {
-      const start = (currentPage.value - 1) * pageSize.value;
-      const end = start + pageSize.value;
-      return allIcons.slice(start, end);
     });
 
     return {
-      Menus,
-      Menu,
+      Certificates,
+      Certificate,
+      allRoles,
+      dialogVisible,
       searchText,
+      listData,
+      saveData,
       refresh,
       addNew,
-      dialogVisible,
-      iconDialogVisible,
-      icons,
-      allIcons,
-      currentPage,
-      handlePageChange,
-      selectedIcon,
-      pageSize,
-      onSelected,
-      getIconComponent,
-      openIconSelector,
-      paginatedIcons,
-      displayIcon,
-      anyProps,
-      selectIcon,
-      options,
-      dialogTitle,
-      saveData,
-      resetData,
-      deleted,
       getDetail,
-      toggleStatus,
-      loadTree,
-      querySearchAsync,
-      handleSelect,
+      deleteCertificate,
+      resetData,
+      dialogTitle,
     };
   }
 };
 </script>
 
+
 <style scoped>
-.icon-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 2rem;  /* 调整间距 */
-}
-
-.selectable-icon {
-  font-size: 32px;  /* 调整图标大小 */
-  width: auto;  /* 使用图标的实际宽度 */
-  height: auto;  /* 使用图标的实际高度 */
-  margin-bottom: 10px;  /* 在图标和名字之间增加间距 */
-}
-
-.icon-container {
-  display: flex;
-  flex-direction: column;  /* 让内容垂直排列 */
-  align-items: center;  /* 内容水平居中 */
-  justify-content: center;  /* 内容垂直居中 */
-  width: 100px;
-  height: 100px;
-  padding: 10px;
-  text-align: center;
-  border-radius: 5px;
-  transition: background-color 0.3s;
-  cursor: pointer;
-}
-
-.icon-container:hover {
-  background-color: #f0f0f0;
-}
 
 .icon-item > div {
   display: flex;
@@ -372,48 +168,30 @@ export default {
   color: rgba(0, 0, 0, 0.7);
 }
 
-.icon-input-container {
-  display: inline-block;
-  width: 100px;
-  height: 40px;
+.wide-cascader .el-input__inner {
+  width: 300px !important;
+}
+
+.avatar-uploader .avatar {
+  width: 178px;
+  height: 178px;
+  display: block;
+}
+</style>
+
+<style>
+
+.avatar-uploader .el-upload {
+  border: 1px dashed var(--el-border-color);
+  border-radius: 6px;
   cursor: pointer;
-  border: 1px solid #ccc;
-  text-align: center;
-  line-height: 40px;
-  background-color: #f7f7f7;
   position: relative;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+  overflow: hidden;
+  transition: var(--el-transition-duration-fast);
 }
 
-.icon-input-container:hover {
-  background-color: #e5e5e5;
+.avatar-uploader .el-upload:hover {
+  border-color: var(--el-color-primary);
 }
 
-.display-icon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 32px;  /* 调整显示图标的大小 */
-}
-
-.icon-placeholder {
-  color: #999;
-  font-size: 14px;
-}
-
-.table-icon {
-  font-size: 16px;   /* 如果是字体图标 */
-  width: 16px;      /* 如果是SVG图标 */
-  text-align: left;  /* 显式地设置文本对齐方式为左对齐 */
-  padding: 0;
-  margin: 0;
-}
-
-.flex-container {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-}
 </style>

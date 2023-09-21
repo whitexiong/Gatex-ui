@@ -1,419 +1,198 @@
 <template>
-  <div>
-    <!-- 搜索和刷新区域 -->
-    <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+  <el-container>
+    <el-header>
+      <h1>OpenVPN 高级控制面板</h1>
+    </el-header>
 
-      <!-- 搜索部分 -->
-      <div style="display: flex; align-items: center;">
-        <el-input
-            placeholder="请输入菜单名称"
-            style="width: 200px;"
-            @keyup.enter="getList">
-          <template #append>
-            <el-button @click="fetchMenus" style="margin-right: 5px;">
-              <el-icon><Search /></el-icon>
-            </el-button>
-            <el-button @click="resetSearch">
-              <el-icon><Refresh /></el-icon>
-            </el-button>
-          </template>
-        </el-input>
-      </div>
+    <el-main>
+      <!-- 概览统计部分 -->
+      <el-row :gutter="20">
+        <el-col :span="8">
+          <el-card>
+            <div class="big-number">420</div>
+            <div>当前在线用户</div>
+          </el-card>
+        </el-col>
+        <el-col :span="8">
+          <el-card>
+            <div class="big-number">3.5 TB</div>
+            <div>带宽使用</div>
+          </el-card>
+        </el-col>
+        <el-col :span="8">
+          <el-card>
+            <div class="big-number">12</div>
+            <div>VPN 节点数</div>
+          </el-card>
+        </el-col>
+      </el-row>
 
-      <!-- 操作部分 -->
-      <div style="display: flex; align-items: center;">
-        <el-button @click="refresh">
-          <el-icon><RefreshRight /></el-icon>
-        </el-button>
+      <!-- 节点连接速度和延迟图表 -->
+      <el-row :gutter="20" style="margin-top: 20px;">
+        <el-col :span="12">
+          <el-card>
+            <template v-slot:header>
+              <span>节点连接速度</span>
+            </template>
+            <div id="node-speed" style="height: 300px;"></div>
+          </el-card>
+        </el-col>
+        <el-col :span="12">
+          <el-card>
+            <template v-slot:header>
+              <span>节点延迟</span>
+            </template>
+            <div id="node-latency" style="height: 300px;"></div>
+          </el-card>
+        </el-col>
+      </el-row>
 
-        <el-button @click="addNew" style="margin-left: 10px;">
-          <el-icon><Plus /></el-icon>新增
-        </el-button>
-        <ADialog
-            v-model="dialogVisible"
-            :title="dialogTitle"
-            @confirm="saveData"
-            @reset="resetData"
-        >
-          <el-form ref="MenuForm" :model="Menu" label-width="80px" style="width: 100%;">
-            <!-- 父菜单 -->
-            <el-form-item label="上级菜单">
-              <el-cascader
-                  v-model="Menu.ParentID"
-                  :options="options"
-                  placeholder="请选择菜单"
-                  :props="anyProps"
-                  @change="onSelected"
-                  clearable
-              ></el-cascader>
-            </el-form-item>
+      <el-row :gutter="20" style="margin-top: 20px;">
+        <!-- 当天VPN流量的时间序列图 -->
+        <el-col :span="12">
+          <el-card>
+            <template v-slot:header>
+              <span>当天流量图</span>
+            </template>
+            <div id="daily-flow" style="height: 300px;"></div>
+          </el-card>
+        </el-col>
+        <el-col :span="12">
+          <el-card>
+            <template v-slot:header>
+              <span>最受欢迎节点</span>
+            </template>
+            <div id="popular-nodes" style="height: 300px;"></div>
+          </el-card>
+        </el-col>
+      </el-row>
 
-            <!-- 名称 -->
-            <el-form-item label="名称">
-              <el-input v-model="Menu.Name" placeholder="请输入菜单名称"></el-input>
-            </el-form-item>
-
-            <!-- 路径 -->
-            <el-form-item label="路径">
-              <el-autocomplete
-                  v-model="Menu.Path"
-                  :fetch-suggestions="querySearchAsync"
-                  placeholder="请输入菜单路径"
-                  @select="handleSelect"
-                  style="width: 100%;"
-              >
-                <template #suffix>
-                  <el-icon class="el-input__icon" @click="handleIconClick">
-                    <edit />
-                  </el-icon>
-                </template>
-                <template #default="{ item }">
-                  <div class="flex-container">
-                    <div class="value">{{ item.value }}</div>
-                    <div class="name">{{ item.name }}</div>
-                  </div>
-                </template>
-              </el-autocomplete>
-            </el-form-item>
-
-            <!-- 图标选择 -->
-            <el-form-item label="图标">
-              <div class="icon-input-container" @click="openIconSelector">
-                <component :is="getIconComponent(displayIcon)" class="display-icon" v-if="displayIcon" />
-                <span v-else class="icon-placeholder">选择图标</span>
-              </div>
-              <el-input v-model="displayIcon" readonly v-if="false"></el-input>
-
-              <el-dialog v-model="iconDialogVisible" width="50%" hight="50%">
-                <div class="icon-grid">
-                  <div v-for="icon in paginatedIcons" :key="icon">
-                    <div @click="selectIcon(icon)" class="icon-container">
-                      <component :is="getIconComponent(icon)" class="selectable-icon" />
-                      <span>{{ icon }}</span>
-                    </div>
-                  </div>
-                </div>
-                <el-pagination
-                    @current-change="handlePageChange"
-                    :current-page="currentPage"
-                    :page-size="pageSize"
-                    layout="prev, pager, next"
-                    :total="allIcons.length"
-                >
-                </el-pagination>
-              </el-dialog>
-            </el-form-item>
-
-            <!-- 排序 -->
-            <el-form-item label="排序">
-              <el-input-number v-model="Menu.Order" :min="0"></el-input-number>
-            </el-form-item>
-
-            <el-form-item label="状态">
-              <el-switch
-                  v-model="Menu.Status"
-                  :active-value="1"
-                  :inactive-value="0"
-              ></el-switch>
-            </el-form-item>
-          </el-form>
-        </ADialog>
-      </div>
-    </div>
-
-    <!-- 表格区域 -->
-    <el-table :data="Menus" row-key="id" lazy :load="loadTree" style="width: 1980px; height: 1000px" border default-expand-all>
-      <el-table-column label="菜单名称">
-        <template #default="scope">
-          <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">{{ scope.row.name }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="图标" align="center" header-align="center">
-        <template #default="scope">
-        <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">
-            <component :is="getIconComponent(scope.row.icon)" class="display-icon table-icon" v-if="scope.row.icon" />
-        </span>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="菜单链接">
-        <template #default="scope">
-          <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">{{ scope.row.path }}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="操作" width="260">
-        <template #default="{ row }">
-          <div style="display: flex; align-items: center;">
-            <el-button size="small" @click="toggleStatus(row)">
-              {{ row.Status === 1 ? '禁用' : '开启' }}
-            </el-button>
-            <el-button type="primary" size="small" @click="getDetail(row.id)" style="color: black; margin-left: 5px;">编辑</el-button>
-            <el-button type="danger" size="small" @click="deleted(row.id)" style="color: black; margin-left: 10px;">删除</el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
-  </div>
+    </el-main>
+  </el-container>
 </template>
 
-
 <script>
-import {ref, onMounted, computed} from 'vue';
-import { getList, detail, add, update, deletedById } from '@/services/menuService';
-import { getPathList } from '@/services/routeService';
-import {Plus, Refresh, RefreshRight, Search, Tools} from "@element-plus/icons-vue";
-import ADialog from '@/components/ADialog.vue';
-import * as icons from '@element-plus/icons';
-import {useCRUD} from "@/composables/useCRUD";
+import { onMounted } from 'vue';
+import * as echarts from 'echarts';
 
 export default {
-  components: {Tools, Refresh, Search, Plus, RefreshRight,ADialog},
+  name: 'AdvancedVPNDashboard',
   setup() {
-    const iconDialogVisible = ref(false);
-    const options = ref([]);
-    const allIcons = Object.keys(icons);
-    const paths = ref([])
-    const initFormData = {
-      ID: null,
-      Name: null,
-      Icon: null,
-      Path: null,
-      ParentID: null,
-      Order: 0,
-      Status: null,
-      RouteID: null,
-    }
-
-
-    const apiMethods = {
-      getList,
-      add,
-      update,
-      detail,
-      deletedById,
-    };
-
-    const anyProps = {
-      checkStrictly: true,
-      value: 'value',
-      label: 'label',
-      children: 'children'
-    }
-
-    const {
-      data: Menus,
-      selected: Menu,
-      dialogVisible,
-      searchText,
-      currentPage,
-      loadTree,
-      pageSize,
-      listData,
-      saveData,
-      refresh,
-      addNew,
-      getDetail,
-      deleted,
-      resetData,
-      dialogTitle,
-      handlePageChange,
-      toggleStatus,
-    } = useCRUD(apiMethods, initFormData);
-
-    const loadPathsFromServer = async () => {
-      const response = await getPathList();
-      paths.value = response.data;
-    };
-
-    const querySearchAsync = (queryString, cb) => {
-      const results = paths.value.filter(path => typeof path.value === 'string' && path.value.indexOf(queryString) === 0);
-      cb(results);
-    };
-
-    const handleSelect = (item) => {
-      Menu.value.RouteID = parseInt(item.id, 10);
-    };
-
-    const selectedIcon = ref(Menu.value.Icon);
-
-    const transCascader = (Menu) => {
-      return {
-        value: Menu.value,
-        label: Menu.label,
-        children: Menu.children && Menu.children.length
-            ? Menu.children.map(child => transCascader(child))
-            : null
-      };
-    };
-
-    const onSelected = (value) => {
-      if (value && Array.isArray(value) && value.length > 0) {
-        Menu.ParentID = value[value.length - 1];
-      }
-    }
-
-
-    const selectIcon = (icon) => {
-      displayIcon.value = icon;
-      Menu.value.Icon = icon;
-      console.log(Menu.value.Icon)
-    };
-
-    onMounted(async () => {
-      await listData();
-      if (Menus.value) {
-        options.value = Menus.value.map(Menu => transCascader(Menu));
-      }
-      await loadPathsFromServer();
+    onMounted(() => {
+      initCharts();
     });
 
-    const getIconComponent = (icon) => {
-      console.log("是否是有效组件",icons[icon])
-      return icons[icon];
+    const initCharts = () => {
+//
+//       // 省略其他图表初始化逻辑...
+// // 节点连接速度图
+      const nodeSpeed = echarts.init(document.getElementById('node-speed'));
+      nodeSpeed.setOption({
+        title: {
+          text: 'VPN节点连接速度'
+        },
+        tooltip: {},
+        legend: {
+          data: ['速度']
+        },
+        xAxis: {
+          data: ['节点A', '节点B', '节点C', '节点D', '节点E']
+        },
+        yAxis: {},
+        series: [{
+          name: '速度',
+          type: 'bar',
+          data: [5.2, 4.3, 6.1, 5.8, 4.9]
+        }]
+      });
+//
+// 节点延迟图
+      const nodeLatency = echarts.init(document.getElementById('node-latency'));
+      nodeLatency.setOption({
+        title: {
+          text: 'VPN节点延迟'
+        },
+        tooltip: {},
+        legend: {
+          data: ['延迟']
+        },
+        xAxis: {
+          data: ['节点A', '节点B', '节点C', '节点D', '节点E']
+        },
+        yAxis: {},
+        series: [{
+          name: '延迟',
+          type: 'bar',
+          data: [15, 20, 12, 16, 25]
+        }]
+      });
+
+
+// // 当天VPN流量的时间序列图初始化
+      const dailyFlow = echarts.init(document.getElementById('daily-flow'));
+      dailyFlow.setOption({
+        title: {
+          text: '当天流量图'
+        },
+        tooltip: {},
+        xAxis: {
+          type: 'category',
+          data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00']
+        },
+        yAxis: {
+          type: 'value',
+          axisLabel: {
+            formatter: '{value} GB'
+          }
+        },
+        series: [{
+          data: [10, 20, 15, 30, 40, 35, 50],
+          type: 'line',
+          smooth: true
+        }]
+      });
+
+
+
+
+// // 最受欢迎VPN节点的Top 5饼图初始化
+      const popularNodes = echarts.init(document.getElementById('popular-nodes'));
+      popularNodes.setOption({
+        title: {
+          text: '最受欢迎节点'
+        },
+        tooltip: {},
+        series: [{
+          type: 'pie',
+          data: [
+            {name: '节点A', value: 400},
+            {name: '节点B', value: 300},
+            {name: '节点C', value: 200},
+            {name: '节点D', value: 100},
+            {name: '节点E', value: 50}
+          ]
+        }]
+      });
     };
-
-    const openIconSelector = () => {
-      iconDialogVisible.value = true;
-    };
-
-    const displayIcon = computed({
-      get: () => Menu.value.Icon,
-      set: (value) => {
-        Menu.value.Icon = value;
-        iconDialogVisible.value = false;
-      }
-    });
-
-
-    const paginatedIcons = computed(() => {
-      const start = (currentPage.value - 1) * pageSize.value;
-      const end = start + pageSize.value;
-      return allIcons.slice(start, end);
-    });
 
     return {
-      Menus,
-      Menu,
-      searchText,
-      refresh,
-      addNew,
-      dialogVisible,
-      iconDialogVisible,
-      icons,
-      allIcons,
-      currentPage,
-      handlePageChange,
-      selectedIcon,
-      pageSize,
-      onSelected,
-      getIconComponent,
-      openIconSelector,
-      paginatedIcons,
-      displayIcon,
-      anyProps,
-      selectIcon,
-      options,
-      dialogTitle,
-      saveData,
-      resetData,
-      deleted,
-      getDetail,
-      toggleStatus,
-      loadTree,
-      querySearchAsync,
-      handleSelect,
+
     };
-  }
+  },
 };
+
 </script>
 
 <style scoped>
-.icon-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 2rem;  /* 调整间距 */
+.el-header {
+  background-color: #b3c0d1;
+  line-height: 60px;
+  padding-left: 20px;
+  color: #333;
 }
-
-.selectable-icon {
-  font-size: 32px;  /* 调整图标大小 */
-  width: auto;  /* 使用图标的实际宽度 */
-  height: auto;  /* 使用图标的实际高度 */
-  margin-bottom: 10px;  /* 在图标和名字之间增加间距 */
-}
-
-.icon-container {
-  display: flex;
-  flex-direction: column;  /* 让内容垂直排列 */
-  align-items: center;  /* 内容水平居中 */
-  justify-content: center;  /* 内容垂直居中 */
-  width: 100px;
-  height: 100px;
-  padding: 10px;
+.big-number {
+  font-size: 2rem;
   text-align: center;
-  border-radius: 5px;
-  transition: background-color 0.3s;
-  cursor: pointer;
-}
-
-.icon-container:hover {
-  background-color: #f0f0f0;
-}
-
-.icon-item > div {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.icon-item span {
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
-  color: rgba(0, 0, 0, 0.7);
-}
-
-.icon-input-container {
-  display: inline-block;
-  width: 100px;
-  height: 40px;
-  cursor: pointer;
-  border: 1px solid #ccc;
-  text-align: center;
-  line-height: 40px;
-  background-color: #f7f7f7;
-  position: relative;
-  border-radius: 4px;
-  transition: background-color 0.3s;
-}
-
-.icon-input-container:hover {
-  background-color: #e5e5e5;
-}
-
-.display-icon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 32px;  /* 调整显示图标的大小 */
-}
-
-.icon-placeholder {
-  color: #999;
-  font-size: 14px;
-}
-
-.table-icon {
-  font-size: 16px;   /* 如果是字体图标 */
-  width: 16px;      /* 如果是SVG图标 */
-  text-align: left;  /* 显式地设置文本对齐方式为左对齐 */
-  padding: 0;
-  margin: 0;
-}
-
-.flex-container {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
+  margin-bottom: 10px;
 }
 </style>
