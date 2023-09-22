@@ -51,13 +51,13 @@
     </el-dialog>
 
     <el-container class="chat-container">
-      <el-header class="header" v-if="selectedUser">
-        {{ selectedUser.name }}
+      <el-header class="header" v-if="selectedRoom">
+        {{ selectedRoom.Name }}
         <span v-if="isTyping">...正在输入</span>
       </el-header>
-      <el-scrollbar>
+      <el-scrollbar ref="messagesContainer">
 
-        <el-main class="messages" ref="messagesContainer">
+        <el-main class="messages">
           <div v-for="(msg, index) in currentChatMessages" :key="index"
                :class="['message-container', msg.type]">
             <el-avatar v-if="msg.type === 'received'"
@@ -75,18 +75,21 @@
       </el-scrollbar>
 
       <el-footer class="input-container">
-        <div class="toolbar">
-          <el-button class="icon-btn"><el-icon><WalletFilled /></el-icon></el-button>
-          <el-button class="icon-btn"><el-icon><Folder /></el-icon></el-button>
-          <el-button class="icon-btn"><el-icon><ChatRound /></el-icon></el-button>
-        </div>
+        <!-- 左侧的图标工具栏 -->
+        <EmojiPicker @emoji-selected="addEmojiToInput" />
+
+        <!-- 中间的输入框 -->
         <el-input
             v-model="message"
             placeholder="请输入...."
             class="chat-input"
             @keyup.enter="sendMessage"
         ></el-input>
-        <div class="send-button" @click="sendMessage">发送</div>
+
+        <!-- 右侧的发送按钮 -->
+        <div class="toolbar-right">
+          <div class="send-button" @click="sendMessage">发送</div>
+        </div>
       </el-footer>
 
     </el-container>
@@ -94,9 +97,10 @@
 </template>
 
 <script>
-import { reactive, toRefs, onBeforeUnmount, onMounted, computed, nextTick, ref } from "vue";
-import {WalletFilled, Folder, ChatRound, Search} from "@element-plus/icons-vue";
+import { reactive, toRefs, onBeforeUnmount, onMounted, nextTick, ref } from "vue";
+import {Search} from "@element-plus/icons-vue";
 import { getChatUsers, fetchChatHistoryForUser, fetchChatWindow, createChatRoom  } from "@/services/chatService";
+import EmojiPicker from '@/components/EmojiPicker.vue';
 import {Plus} from '@element-plus/icons';
 
 export default {
@@ -105,7 +109,7 @@ export default {
       return Search
     }
   },
-  components: { WalletFilled, Folder, ChatRound, Plus },
+  components: {Plus, EmojiPicker },
 
   setup() {
 
@@ -115,6 +119,12 @@ export default {
     const selectedUsers = ref([]);
     const chatRooms = ref([]);
     const currentChatMessages = ref([]);
+    const messagesContainer = ref(null);
+
+
+    const addEmojiToInput = (emoji) => {
+      state.message += emoji; // 直接使用 state.message
+    };
 
     const state = reactive({
       message: '',
@@ -178,10 +188,24 @@ export default {
       }
     };
 
+    const scrollToBottom = async () => {
+      await nextTick();
+
+      setTimeout(() => {
+        if (messagesContainer.value && messagesContainer.value.$el) {
+          const scrollWrapper = messagesContainer.value.$el.querySelector('.el-scrollbar__wrap');
+          if (scrollWrapper) {
+            scrollWrapper.scrollTop = scrollWrapper.scrollHeight;
+          }
+        }
+      }, 200); // 这里设置了200毫秒的延迟，你可以根据需要调整这个值。
+    };
+
     const initWebSocket = () => {
       // state.socket = new WebSocket("ws://120.46.80.249:8051/ws");
       const token = localStorage.getItem('token');
-      state.socket = new WebSocket(`ws://127.0.0.1:8051/ws?token=${token}`);
+      state.socket = new WebSocket(`ws://10.8.0.6:8051/ws?token=${token}`);
+      // state.socket = new WebSocket(`ws://127.0.0.1:8051/ws?token=${token}`);
 
       state.socket.onopen = (event) => {
         console.log("WebSocket 已打开：", event);
@@ -199,6 +223,7 @@ export default {
 
       state.socket.onmessage = (event) => {
         console.log("Received message:", event.data);
+        scrollToBottom()
         const userData = JSON.parse(localStorage.getItem('userData'));
         const userId = userData ? userData.id : null;
 
@@ -220,6 +245,7 @@ export default {
           if (chatRoomId === state.selectedRoom.ID) {
             currentChatMessages.value.push({ content: data.Content, type: 'received' });
           }
+
         } catch (error) {
           console.error("解析消息错误:", error);
         }
@@ -236,7 +262,7 @@ export default {
 
     const sendMessage = () => {
       if (state.message.trim() && state.selectedRoom && state.selectedRoom.ID) {
-        console.log(11);
+
         const userData = JSON.parse(localStorage.getItem('userData'));
         const senderId = userData ? userData.id : null;
         if (!senderId) {
@@ -269,7 +295,6 @@ export default {
 
 
     const selectRoom = (room) => {
-      console.log(room);
       state.selectedRoom = room;
 
       // Determine the message type for each message in the selected room.
@@ -282,6 +307,8 @@ export default {
           type: msg.SenderID === currentUserId ? 'sent' : 'received'
         };
       });
+
+      scrollToBottom()
     };
 
 
@@ -290,10 +317,9 @@ export default {
         const selectedUserIds = selectedUsers.value; // 这里获取已选择的用户ID
 
         const chatRoomData = {
-          Name: "新的聊天窗口",
           Description: "",
           RoomType: 1,
-          UserIDs: selectedUserIds  // 添加选中的用户ID
+          UserIDs: selectedUserIds
         };
         const response = await createChatRoom(chatRoomData);
 
@@ -323,7 +349,10 @@ export default {
       state,
       selectRoom,
       chatRooms,
-      getOtherUser
+      getOtherUser,
+      messagesContainer,
+      scrollToBottom,
+      addEmojiToInput
     };
   }
 };
@@ -335,6 +364,8 @@ export default {
   width: 800px;
   border: 1px solid #ccc;
 }
+
+
 
 .sent .message:hover {
   background-color: rgba(93, 190, 93, 0.7); /* 这是为绿色气泡设置的悬停颜色，你可以根据需要调整 */
@@ -409,12 +440,11 @@ export default {
   position: relative;
 }
 .input-container {
-  position: relative;
   display: flex;
   align-items: center;
-  background-color: #f5f7fa;
-  padding: 5px;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+  justify-content: space-between;
+  padding: 0 10px; /* 两边的间距 */
+  border-top: 1px solid #ccc; /* 加上这行 */
 }
 
 .toolbar {
@@ -438,19 +468,6 @@ export default {
   border: none;
   padding: 10px 20px;
   margin: 0 10px;
-}
-
-.send-button {
-  color: #4caf50;
-  background-color: #e0e0e0;
-  border-radius: 15px;
-  padding: 5px 10px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.send-button:hover {
-  background-color: #d0d0d0;
 }
 
 .sent .message::after {
@@ -568,7 +585,6 @@ export default {
   background-color: #eee; /* 淡灰色背景 */
 }
 
-/* 右侧（发送的消息） */
 .message-container.sent {
   justify-content: flex-end;
 }
@@ -584,6 +600,33 @@ export default {
   margin: 0 10px;
 }
 
+.toolbar-right {
+  display: flex;
+  align-items: center;
+}
 
+.icon-btn {
+  margin: 0 5px; /* 左右间距 */
+  background-color: transparent; /* 透明背景 */
+  border: none;
+  padding: 0;
+}
 
+.chat-input {
+  flex-grow: 1;
+  margin: 0 10px; /* 输入框两边的间距 */
+}
+
+.send-button {
+  padding: 5px 10px;
+  border-radius: 5px;
+  background-color: #1E90FF; /* 按钮颜色 */
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.send-button:hover {
+  background-color: #187CBD; /* 按钮悬停颜色 */
+}
 </style>
