@@ -215,15 +215,38 @@ export default {
 
         if (userId) {
           state.socket.send(JSON.stringify({
-            type: 'user_online',
             userId: userId
           }));
         }
       };
 
+      function displayMessageWordByWord(content, callback) {
+        let index = 0;
+        let currentMessage = "";
+
+        const interval = setInterval(() => {
+          if (index >= content.length) {
+            clearInterval(interval);
+            callback();
+            return;
+          }
+
+          currentMessage += content.charAt(index);
+          index++;
+
+          // 更新消息显示逻辑
+          if (currentChatMessages.value.length && currentChatMessages.value[currentChatMessages.value.length - 1].temporary) {
+            currentChatMessages.value[currentChatMessages.value.length - 1].content = currentMessage;
+          } else {
+            currentChatMessages.value.push({ content: currentMessage, type: 'received', temporary: true });
+          }
+          scrollToBottom();
+        }, 100);
+      }
+
       state.socket.onmessage = (event) => {
         console.log("Received message:", event.data);
-        scrollToBottom()
+        scrollToBottom();
         const userData = JSON.parse(localStorage.getItem('userData'));
         const userId = userData ? userData.id : null;
 
@@ -242,14 +265,20 @@ export default {
             state.chatMessages[chatRoomId] = [];
           }
 
-          if (chatRoomId === state.selectedRoom.ID) {
-            currentChatMessages.value.push({ content: data.Content, type: 'received' });
-          }
-
+            if (chatRoomId === state.selectedRoom.ID) {
+              // 使用上面创建的函数来逐字显示消息
+              displayMessageWordByWord(data.Content, () => {
+                // 当所有单词都显示完毕后，删除"temporary"属性
+                if (currentChatMessages.value.length) {
+                  delete currentChatMessages.value[currentChatMessages.value.length - 1].temporary;
+                }
+              });
+            }
         } catch (error) {
           console.error("解析消息错误:", error);
         }
       };
+
 
       state.socket.onerror = (error) => {
         console.error("WebSocket 出错：", error);
@@ -277,7 +306,6 @@ export default {
         };
 
         const payload = {
-          type: "text",
           chatId: state.selectedRoom.ID,  // Use room ID from selectedRoom
           body: JSON.stringify(messageBody)
         };
@@ -294,10 +322,11 @@ export default {
     };
 
 
-    const selectRoom = (room) => {
+    const selectRoom = async (room) => {
       state.selectedRoom = room;
 
-      // Determine the message type for each message in the selected room.
+      await fetchChatHistoryForUser(room.ID);
+      console.log(state.selectedRoom)
       const userData = JSON.parse(localStorage.getItem('userData'));
       const currentUserId = userData ? userData.id : null;
 
@@ -314,15 +343,15 @@ export default {
 
     const onConfirmTransfer = async () => {
       try {
-        const selectedUserIds = selectedUsers.value; // 这里获取已选择的用户ID
+        const selectedUserIds = selectedUsers.value;
 
+        console.log("创建用户的名称:",selectedUsers)
         const chatRoomData = {
           Description: "",
-          RoomType: 1,
           UserIDs: selectedUserIds
         };
         const response = await createChatRoom(chatRoomData);
-
+        await fetchChatWindowsByUser();
         toggleModal();
       } catch (error) {
         console.error("Error creating chat room:", error);

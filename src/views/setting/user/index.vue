@@ -3,27 +3,6 @@
     <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
 
       <div style="display: flex; align-items: center;">
-        <el-input
-            v-model="searchText"
-            placeholder="请输入用户名"
-            style="width: 200px;"
-            @keyup.enter="listData">
-          <template #append>
-            <el-button @click="listData" style="margin-right: 5px;">
-              <el-icon>
-                <Search/>
-              </el-icon>
-            </el-button>
-            <el-button @click="resetSearch">
-              <el-icon>
-                <Refresh/>
-              </el-icon>
-            </el-button>
-          </template>
-        </el-input>
-      </div>
-
-      <div style="display: flex; align-items: center;">
         <el-button @click="refresh">
           <el-icon>
             <RefreshRight/>
@@ -78,6 +57,9 @@
             <el-form-item label="状态">
               <el-switch v-model="User.Status" :active-value="1" :inactive-value="0"></el-switch>
             </el-form-item>
+            <el-form-item label="是否为AI">
+              <el-checkbox v-model="User.IsAI" label="AI用户"></el-checkbox>
+            </el-form-item>
             <el-form-item label="角色">
               <el-select v-model="User.Roles" multiple placeholder="请选择角色">
                 <el-option
@@ -93,34 +75,9 @@
       </div>
     </div>
 
-    <!-- 用户表格区域 -->
-    <el-table :data="Users"  row-key="ID" lazy :load="loadTree" style="width: 1980px; height: 1000px" border>>
-      <el-table-column label="用户名" prop="Username"></el-table-column>
-      <el-table-column label="邮箱" prop="Email"></el-table-column>
-      <el-table-column label="状态" width="100">
-        <template #default="scope">
-          <span>{{ scope.row.Status === 1 ? '启用' : '禁用' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="角色" width="200">
-        <template #default="scope">
-          <span>{{ scope.row.Roles.map(role => role.Name).join(', ') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="260">
-        <template #default="{ row }">
-          <div style="display: flex; align-items: center;">
-            <el-button type="primary" size="small" @click="getDetail(row.ID)" style="color: black; margin-left: 5px;">
-              编辑
-            </el-button>
-            <el-button type="danger" size="small" @click="deleteUser(row.ID)" style="color: black; margin-left: 10px;">
-              删除
-            </el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
-  </div>
+    <DynamicTable v-if="Users" :tableData="Users"  @edit="getDetail" @delete="deleteUser"/>
+
+      </div>
 </template>
 
 <script>
@@ -131,10 +88,17 @@ import {Plus, Refresh, RefreshRight, Search} from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
 import {useCRUD} from '@/composables/useCRUD';
 import {uploadFile} from "@/services/uploadService";
+import DynamicTable from "@/components/table/DynamicTable.vue"
+import edit from "@element-plus/icons/lib/Edit";
 
 
 export default {
-  components: {Refresh, Search, Plus, RefreshRight, ADialog},
+  computed: {
+    edit() {
+      return edit
+    }
+  },
+  components: { Plus, RefreshRight, ADialog, DynamicTable},
   setup() {
     const initialUser = {
       ID: null,
@@ -143,6 +107,7 @@ export default {
       Password: '',
       Status: null,
       AvatarUrl: '',
+      IsAI: false,
       Roles: [],
     };
 
@@ -153,7 +118,6 @@ export default {
       detail: detail,
       deletedById: deletedById
     };
-
 
     const handleAvatarSuccess = (response) => {
       User.AvatarUrl = response.avatar_url;
@@ -220,7 +184,7 @@ export default {
       resetData,
       dialogTitle,
       handleAvatarSuccess,
-      beforeAvatarUpload
+      beforeAvatarUpload,
     };
   }
 };
@@ -274,4 +238,6 @@ export default {
   height: 178px;
   text-align: center;
 }
+
+
 </style>
