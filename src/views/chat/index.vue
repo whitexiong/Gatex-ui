@@ -1,5 +1,10 @@
 <template>
-  <el-container class="wechat-container">
+  <el-container class="wechat-container"
+                :style="chatContainerStyle"
+                @mousedown="startDrag"
+                @mousemove="onDrag"
+                @mouseup="endDrag"
+  >
 
     <el-aside class="aside">
       <!-- 搜索和+按钮 -->
@@ -51,9 +56,9 @@
     </el-dialog>
 
     <el-container class="chat-container">
-      <el-header class="header" v-if="selectedRoom">
+      <el-header class="header draggable-handle" v-if="selectedRoom">
         {{ selectedRoom.Name }}
-        <span v-if="isTyping">...正在输入</span>
+<!--        <span v-if="isTyping">...正在输入</span>-->
       </el-header>
       <el-scrollbar ref="messagesContainer">
 
@@ -121,6 +126,43 @@ export default {
     const currentChatMessages = ref([]);
     const messagesContainer = ref(null);
 
+    const isDragging = ref(false);
+    const startX = ref(0);
+    const startY = ref(0);
+    const chatContainerStyle = ref({});
+
+    const startDrag = (e) => {
+      // 检查事件的目标是否是拖动把手或其子元素
+      let target = e.target;
+      while (target) {
+        if (target.classList.contains('draggable-handle')) {
+          break; // 找到拖动把手
+        }
+        target = target.parentElement;
+      }
+
+      if (!target) {
+        return; // 如果没有找到拖动把手，则退出
+      }
+
+      isDragging.value = true;
+      startX.value = e.clientX - e.currentTarget.offsetLeft;
+      startY.value = e.clientY - e.currentTarget.offsetTop;
+    };
+
+
+    const onDrag = (e) => {
+      if (isDragging.value) {
+        chatContainerStyle.value = {
+          left: `${e.clientX - startX.value}px`,
+          top: `${e.clientY - startY.value}px`
+        };
+      }
+    };
+
+    const endDrag = () => {
+      isDragging.value = false;
+    };
 
     const addEmojiToInput = (emoji) => {
       state.message += emoji; // 直接使用 state.message
@@ -198,7 +240,7 @@ export default {
             scrollWrapper.scrollTop = scrollWrapper.scrollHeight;
           }
         }
-      }, 200); // 这里设置了200毫秒的延迟，你可以根据需要调整这个值。
+      }, 50); // 这里设置了200毫秒的延迟，你可以根据需要调整这个值。
     };
 
     const initWebSocket = () => {
@@ -241,7 +283,7 @@ export default {
             currentChatMessages.value.push({ content: currentMessage, type: 'received', temporary: true });
           }
           scrollToBottom();
-        }, 100);
+        }, 50);
       }
 
       state.socket.onmessage = (event) => {
@@ -337,7 +379,7 @@ export default {
         };
       });
 
-      scrollToBottom()
+      await scrollToBottom()
     };
 
 
@@ -381,7 +423,11 @@ export default {
       getOtherUser,
       messagesContainer,
       scrollToBottom,
-      addEmojiToInput
+      addEmojiToInput,
+      startDrag,
+      onDrag,
+      endDrag,
+      chatContainerStyle,
     };
   }
 };
@@ -389,15 +435,10 @@ export default {
 
 <style scoped>
 .wechat-container {
-  height: 600px;
-  width: 800px;
+  height: 640px;
+  width: 940px;
   border: 1px solid #ccc;
-}
-
-
-
-.sent .message:hover {
-  background-color: rgba(93, 190, 93, 0.7); /* 这是为绿色气泡设置的悬停颜色，你可以根据需要调整 */
+  position: absolute;
 }
 
 .header {
@@ -476,27 +517,19 @@ export default {
   border-top: 1px solid #ccc; /* 加上这行 */
 }
 
-.toolbar {
-  display: flex;
-  align-items: center;
-  margin-right: 10px;
-}
-
-.icon-btn {
-  padding: 5px;
-  background: none;
-  border: none;
-  font-size: 20px;
-  color: #999;
-}
-
 .chat-input {
   flex: 1;
   border-radius: 20px;
   background-color: #fff;
   border: none;
-  padding: 10px 20px;
   margin: 0 10px;
+}
+
+@media only screen and (max-width: 768px) {
+  .wechat-container {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .sent .message::after {
@@ -632,13 +665,6 @@ export default {
 .toolbar-right {
   display: flex;
   align-items: center;
-}
-
-.icon-btn {
-  margin: 0 5px; /* 左右间距 */
-  background-color: transparent; /* 透明背景 */
-  border: none;
-  padding: 0;
 }
 
 .chat-input {
