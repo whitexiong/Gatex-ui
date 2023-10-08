@@ -1,7 +1,5 @@
 <template>
   <div>
-    <!-- 工具栏 -->
-    <div class="toolbar-left">
       <!-- 表情按钮 -->
       <el-popover
           v-model="showEmojiPanel"
@@ -23,18 +21,6 @@
         </div>
       </el-popover>
 
-      <!-- 其他按钮 -->
-      <el-button class="icon-btn">
-        <el-icon>
-          <Folder/>
-        </el-icon>
-      </el-button>
-      <el-button class="icon-btn">
-        <el-icon>
-          <ChatRound/>
-        </el-icon>
-      </el-button>
-
     </div>
 
     <!-- 聊天窗口 -->
@@ -42,7 +28,6 @@
       <!-- 在这里显示聊天内容 -->
       <div v-html="chatContent"></div>
     </div>
-  </div>
 </template>
 
 
@@ -53,8 +38,8 @@ import {ChatRound, Folder} from "@element-plus/icons-vue";
 
 
 export default {
-  components: {SmileyIcon, Folder, ChatRound},
-  setup(_, {emit}) { // 注意这里，我们使用解构来获得 emit
+  components: {SmileyIcon},
+  setup(_, {emit}) {
     const showEmojiPanel = ref(false);
     const emojis = [
       '😀', '😃', '😄', '😁', '😆', '😅',
@@ -91,12 +76,7 @@ export default {
 
 .emoji-grid span {
   cursor: pointer;
-  padding: 5px;
+  //padding: 5px;
   font-size: 24px;
-}
-
-.toolbar-left {
-  display: flex;
-  align-items: center;
 }
 </style>

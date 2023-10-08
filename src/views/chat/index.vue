@@ -81,10 +81,14 @@
 
       <el-footer class="input-container">
         <!-- 左侧的图标工具栏 -->
-        <EmojiPicker @emoji-selected="addEmojiToInput" />
+        <div class="toolbar-left">
+          <EmojiPicker @emoji-selected="addEmojiToInput" />
+          <FileUploader  avatar="" chat-window-id="" user-id="" username=""/>
+        </div>
 
         <!-- 中间的输入框 -->
         <el-input
+            type="textarea"
             v-model="message"
             placeholder="请输入...."
             class="chat-input"
@@ -107,6 +111,7 @@ import {Search} from "@element-plus/icons-vue";
 import { getChatUsers, fetchChatHistoryForUser, fetchChatWindow, createChatRoom  } from "@/services/chatService";
 import EmojiPicker from '@/components/EmojiPicker.vue';
 import {Plus} from '@element-plus/icons';
+import FileUploader from "@/components/FileUploader.vue";
 
 export default {
   computed: {
@@ -114,7 +119,7 @@ export default {
       return Search
     }
   },
-  components: {Plus, EmojiPicker },
+  components: {FileUploader, Plus, EmojiPicker },
 
   setup() {
 
@@ -503,27 +508,23 @@ export default {
 .chat-avatar {
   margin: 0 10px;
 }
+
 .message {
   padding: 8px 12px;
   border-radius: 5px 15px 15px;
   max-width: 70%;
   position: relative;
 }
+
 .input-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 10px; /* 两边的间距 */
   border-top: 1px solid #ccc; /* 加上这行 */
+  height: 15%;
 }
 
-.chat-input {
-  flex: 1;
-  border-radius: 20px;
-  background-color: #fff;
-  border: none;
-  margin: 0 10px;
-}
 
 @media only screen and (max-width: 768px) {
   .wechat-container {
@@ -667,11 +668,6 @@ export default {
   align-items: center;
 }
 
-.chat-input {
-  flex-grow: 1;
-  margin: 0 10px; /* 输入框两边的间距 */
-}
-
 .send-button {
   padding: 5px 10px;
   border-radius: 5px;
@@ -684,4 +680,39 @@ export default {
 .send-button:hover {
   background-color: #187CBD; /* 按钮悬停颜色 */
 }
+
+.toolbar-left {
+  display: flex;
+  align-items: flex-start;  /* 从上方开始对齐 */
+  justify-content: flex-start; /* 从左侧开始对齐 */
+  gap: 5px; /* 你可以根据需要调整这个值 */
+  flex-wrap: wrap;  /* 允许内容换行 */
+}
+
+.chat-input,
+.chat-input textarea {
+  flex: 1;
+  height: 60px;
+  border-radius: 20px;
+  background-color: #fff;
+  border: none;
+  margin: 0 10px;
+}
+
+.chat-input textarea {
+  padding: 10px 15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  resize: none;
+  transition: box-shadow 0.3s;
+}
+
+.chat-input textarea:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chat-input textarea:focus {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+
 </style>
