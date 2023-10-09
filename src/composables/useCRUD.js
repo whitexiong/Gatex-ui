@@ -9,7 +9,7 @@ export const useCRUD = (apiMethods, initialData) => {
         dialogVisible: false,
         isEditing: false,
         currentPage: 1,
-        pageSize: 10,
+        pageSize: 10, //默认10页
         searchText: '',
         dialogTitle: '新增',
         error: null
@@ -31,6 +31,7 @@ export const useCRUD = (apiMethods, initialData) => {
             state.isLoading = false;
         }
     };
+
 
     const processDataForRequest = (data) => {
         let processedData = {...data};
@@ -125,9 +126,25 @@ export const useCRUD = (apiMethods, initialData) => {
         await saveData();
         state.dialogVisible = false;
     };
+    const handleSearch = async (searchQueries) => {
+        state.searchText = searchQueries.name;
+        state.currentPage = 1;
+        await listData();
+    };
 
-    const handlePageChange = async (newPage) => {
-        state.currentPage = newPage;
+    const handleSizeChange = async (size) => {
+        state.pageSize = size;
+        await listData();
+    };
+
+    const handlePageChange = async (page) => {
+        state.currentPage = page;
+        await listData();
+    };
+
+    const resetFilters = async () => {
+        state.searchText = '';
+        state.currentPage = 1;
         await listData();
     };
 
@@ -148,7 +165,10 @@ export const useCRUD = (apiMethods, initialData) => {
         deleted,
         resetData,
         loadTree,
+        toggleStatus,
+        handleSearch,
+        handleSizeChange,
         handlePageChange,
-        toggleStatus
+        resetFilters,
     };
 };

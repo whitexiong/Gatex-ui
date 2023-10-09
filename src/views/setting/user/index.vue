@@ -75,7 +75,16 @@
       </div>
     </div>
 
-    <DynamicTable v-if="Users" :tableData="Users"  @edit="getDetail" @delete="deleteUser"/>
+    <DynamicTable
+        v-if="Users"
+        :tableData="Users"
+        @search="handleSearch"
+        @size-change="handleSizeChange"
+        @current-change="handlePageChange"
+        @reset-filters="resetFilters"
+        @edit="getDetail"
+        @delete="deleteUser"
+    />
 
       </div>
 </template>
@@ -116,7 +125,7 @@ export default {
       add: add,
       update: update,
       detail: detail,
-      deletedById: deletedById
+      deletedById: deletedById,
     };
 
     const handleAvatarSuccess = (response) => {
@@ -156,7 +165,11 @@ export default {
       getDetail,
       deleted: deleteUser,
       resetData,
-      dialogTitle
+      dialogTitle,
+      handleSearch,
+      handleSizeChange,
+      handlePageChange,
+      resetFilters,
     } = useCRUD(apiMethods, initialUser);
 
     const allRoles = ref([]);
@@ -185,6 +198,10 @@ export default {
       dialogTitle,
       handleAvatarSuccess,
       beforeAvatarUpload,
+      handleSearch,
+      handleSizeChange,
+      handlePageChange,
+      resetFilters,
     };
   }
 };

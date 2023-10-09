@@ -17,8 +17,8 @@ export const UserLogout = () => {
     return axios.post(`${BASE_URL}/setting/user/logout`);
 }
 
-export const getList = () => {
-    return axios.get(`${BASE_URL}/setting/user/list`);
+export const getList = (data) => {
+    return axios.post(`${BASE_URL}/setting/user/list`, data);
 }
 
 export const add = (userData) => {

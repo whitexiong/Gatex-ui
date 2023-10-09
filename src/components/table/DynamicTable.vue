@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- Search & Filter Section -->
     <div class="filter-section">
       <el-input
           v-for="column in searchableColumns"
@@ -37,21 +36,29 @@
     </el-table>
 
     <!-- Pagination Section -->
+    <div class="pagination-wrapper">
+
     <el-pagination
         v-if="pagination"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
         :current-page="pagination.currentPage"
-        :page-sizes="[10, 20, 30, 40]"
+        :page-sizes="[5, 10, 50, 100]"
         :page-size="pagination.pageSize"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="pagination.totalItems">
+        layout="sizes, total, prev, pager, next, jumper"
+        :total="pagination.totalItems"
+        :page-size-options="['10 条/页', '20 条/页', '50 条/页', '100 条/页']"
+        :prev-text="上一页"
+        :next-text="下一页">
     </el-pagination>
+
+    </div>
 
   </div>
 </template>
 
 <script>
+
 export default {
   props: {
     tableData: {
@@ -145,5 +152,12 @@ export default {
   align-items: center;
   gap: 10px;
   margin-bottom: 20px;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
 }
 </style>

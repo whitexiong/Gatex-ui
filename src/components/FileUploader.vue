@@ -23,14 +23,14 @@
 
       <div class="file-display">
         <strong class="file-label">文件名称:</strong>
-        <span class="file-info">xxx.jpg</span>
+        <span class="file-info">{{ selectedFile.name }}</span>
       </div>
 
       <template v-slot:footer>
-    <span class="dialog-footer">
-      <el-button @click="showConfirmDialog = false">取消</el-button>
-      <el-button @click="confirmUpload">确定</el-button>
-    </span>
+        <span class="dialog-footer">
+          <el-button @click="showConfirmDialog = false">取消</el-button>
+          <el-button @click="confirmUpload">确定</el-button>
+        </span>
       </template>
     </el-dialog>
   </div>
@@ -39,6 +39,8 @@
 <script>
 import { ref } from 'vue';
 import { Folder } from "@element-plus/icons-vue";
+import { uploadFile } from "@/services/uploadService";
+import { ElMessage } from 'element-plus';
 
 export default {
   props: {
@@ -60,8 +62,7 @@ export default {
     }
   },
   components: { Folder },
-  setup(props) {
-    const fileList = ref([]);
+  setup(props, { emit }) {
     const fileInput = ref(null);
     const showConfirmDialog = ref(false);
     const selectedFile = ref(null);
@@ -77,56 +78,36 @@ export default {
       }
     };
 
-    const confirmUpload = () => {
+    const confirmUpload = async () => {
       showConfirmDialog.value = false;
       if (selectedFile.value) {
-        // 在这里执行实际的上传操作，例如使用 axios 发送文件到服务器。
+        try {
+          const response = await uploadFile(selectedFile.value);
+          if (response && response.data && response.data.avatar_url) {
+            // 根据您的响应构建完整的 URL
+            const imageUrl = "http://10.8.0.6:8051/" + response.data.avatar_url;
+
+            // 发出一个事件，通知父组件图片已上传，并传递URL。
+            emit('file-uploaded', imageUrl);
+          } else {
+            // 如果响应中没有 avatar_url，给出错误消息
+            ElMessage.error('服务器未返回图片 URL！');
+          }
+        } catch (error) {
+          ElMessage.error('上传失败!');
+        }
       }
     };
+
 
     return {
       triggerUpload,
       handleFileChange,
       confirmUpload,
       showConfirmDialog,
-      fileList,
-      fileInput
+      fileInput,
+      selectedFile
     };
   }
 };
-
 </script>
-
-<style scoped>
-.recipient-info {
-  display: flex;
-  align-items: center;
-  gap: 10px; /* space between avatar and the recipient details */
-  padding: 10px 0;
-}
-
-.recipient-details {
-  display: flex;
-  flex-direction: column;
-}
-
-.recipient-name {
-  font-weight: bold;
-}
-
-.chat-avatar {
-  width: 50px;
-  height: 50px;
-}
-
-.file-display {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 10px 0;
-}
-
-.file-label {
-  font-weight: bold;
-}
-</style>

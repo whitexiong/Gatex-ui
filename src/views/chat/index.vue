@@ -6,7 +6,16 @@
                 @mouseup="endDrag"
   >
 
-    <el-aside class="aside">
+    <div class="icon-sidebar">
+      <el-icon @click="toggleAside" :size="40" class="toggle-button"><ArrowRightBold /></el-icon>
+      <el-icon :size="40" class="toggle-button" ><House /></el-icon>
+      <el-icon :size="40" class="toggle-button"><ChatRound /></el-icon>
+      <el-icon :size="40" class="toggle-button"><QuestionFilled /></el-icon>
+      <el-icon :size="40" class="toggle-button"><Share /></el-icon>
+      <el-icon :size="40" class="toggle-button"><User /></el-icon>
+    </div>
+
+    <el-aside class="aside" :style="{ width: isAsideVisible ? '250px' : '0' }">
       <!-- 搜索和+按钮 -->
       <div class="header-flex">
         <!-- 搜索框 -->
@@ -30,14 +39,14 @@
              :class="{ selected: room.ID === selectedRoom.ID }"
              @click="selectRoom(room)">
 
-            <div class="avatars-group">
-              <img v-for="user in room.Users.slice(0, 3)" :key="user.ID" :src="user.AvatarUrl" alt="User Avatar" class="avatar-group-item"/>
-            </div>
-            <span>{{ room.Name }}</span>
+          <div class="avatars-group">
+            <img v-for="user in room.Users.slice(0, 3)" :key="user.ID" :src="user.AvatarUrl" alt="User Avatar" class="avatar-group-item"/>
+          </div>
+          <span>{{ room.Name }}</span>
         </div>
       </el-scrollbar>
-
     </el-aside>
+
 
     <!-- 新增的模态框 -->
     <el-dialog v-model="showModal" title="选择用户">
@@ -69,7 +78,15 @@
                        :src="selectedUser.avatar"
                        class="chat-avatar"></el-avatar>
 
-            <div class="message">{{ msg.content }}</div>
+            <div class="message" v-if="isCodeBlock(msg.content)">
+              <div class="code-container">
+                <div v-html="parseMarkdown(getCodeBlock(msg.content))"></div>
+                <button class="copy-button" @click="copyToClipboard(getCodeBlock(msg.content))">Copy Code</button>
+              </div>
+              <div v-html="parseMarkdown(getTextWithoutCode(msg.content))"></div>
+            </div>
+            <div class="message" v-else v-html="parseMarkdown(msg.content)"></div>
+
 
             <el-avatar v-if="msg.type === 'sent'"
                        :src="'https://placekitten.com/49/49'"
@@ -83,7 +100,13 @@
         <!-- 左侧的图标工具栏 -->
         <div class="toolbar-left">
           <EmojiPicker @emoji-selected="addEmojiToInput" />
-          <FileUploader  avatar="" chat-window-id="" user-id="" username=""/>
+          <FileUploader
+              avatar=""
+              chat-window-id=""
+              user-id=""
+              username=""
+              @file-uploaded="handleFileUploaded"
+          />
         </div>
 
         <!-- 中间的输入框 -->
@@ -106,12 +129,15 @@
 </template>
 
 <script>
-import { reactive, toRefs, onBeforeUnmount, onMounted, nextTick, ref } from "vue";
-import {Search} from "@element-plus/icons-vue";
+import {reactive, toRefs, onBeforeUnmount, onMounted, nextTick, ref, computed} from "vue";
+import {Search, ArrowRightBold, ChatRound, QuestionFilled, Share, User, House} from "@element-plus/icons-vue";
 import { getChatUsers, fetchChatHistoryForUser, fetchChatWindow, createChatRoom  } from "@/services/chatService";
 import EmojiPicker from '@/components/EmojiPicker.vue';
 import {Plus} from '@element-plus/icons';
 import FileUploader from "@/components/FileUploader.vue";
+import { marked } from 'marked'
+import hljs from 'highlight.js';
+import 'highlight.js/styles/monokai.css';
 
 export default {
   computed: {
@@ -119,7 +145,7 @@ export default {
       return Search
     }
   },
-  components: {FileUploader, Plus, EmojiPicker },
+  components: {FileUploader, Plus, EmojiPicker, ArrowRightBold, ChatRound, QuestionFilled, Share, User, House},
 
   setup() {
 
@@ -135,6 +161,57 @@ export default {
     const startX = ref(0);
     const startY = ref(0);
     const chatContainerStyle = ref({});
+    const isAsideVisible = ref(false);
+
+    const handleFileUploaded = (imageUrl) => {
+      const imageTag = `<img src="${imageUrl}" alt="Uploaded Image" class="chat-image" width="200" height="200" />`;
+
+      state.message = imageTag;
+
+      sendMessage();
+    };
+
+
+    const parseMarkdown = (markdown) => {
+      return marked(markdown);
+    };
+
+    marked.setOptions({
+      highlight: function(code, language) {
+        const validLang = hljs.getLanguage(language) ? language : 'plaintext';
+        return hljs.highlight(validLang, code).value;
+      }
+    });
+
+    const toggleAside = () => {
+      isAsideVisible.value = !isAsideVisible.value;
+    }
+
+    const copyToClipboard = (markdown) => {
+      const codeMatch = markdown.match(/```[\s\S]*?```/g);
+      if (codeMatch && codeMatch.length > 0) {
+        const el = document.createElement('textarea');
+        el.value = codeMatch[0].replace(/```/g, ''); // 只复制第一个代码块并去除```
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      }
+    };
+
+    const isCodeBlock = (content) => {
+      return content.includes('```');
+    };
+
+    const getCodeBlock = (content) => {
+      const match = content.match(/```[\s\S]*?```/);
+      return match ? match[0] : '';
+    };
+
+    const getTextWithoutCode = (content) => {
+      return content.replace(/```[\s\S]*?```/, '');
+    };
+
 
     const startDrag = (e) => {
       // 检查事件的目标是否是拖动把手或其子元素
@@ -216,7 +293,6 @@ export default {
         console.error("Error fetching chat windows:", error);
       }
     };
-
 
     onBeforeUnmount(() => {
       if (state.socket) {
@@ -368,7 +444,6 @@ export default {
       }
     };
 
-
     const selectRoom = async (room) => {
       state.selectedRoom = room;
 
@@ -433,17 +508,46 @@ export default {
       onDrag,
       endDrag,
       chatContainerStyle,
+      parseMarkdown,
+      copyToClipboard,
+      isCodeBlock,
+      getCodeBlock,
+      getTextWithoutCode,
+      isAsideVisible,
+      toggleAside,
+      handleFileUploaded
     };
   }
 };
 </script>
 
 <style scoped>
+
 .wechat-container {
-  height: 640px;
-  width: 940px;
+  height: 60vh;
+  width: calc(100vw - 60px);
   border: 1px solid #ccc;
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* 将容器居中 */
+  overflow: auto; /* 如果内容超出容器，显示滚动条 */
+}
+
+/* 中等屏幕的样式 */
+@media (min-width: 768px) {
+  .wechat-container {
+    width: 40%; /* 保持宽度为流体 */
+    margin: 0 auto; /* 居中容器 */
+  }
+}
+
+/* 大屏幕的样式 */
+@media (min-width: 1200px) {
+  .wechat-container {
+    width: 50%; /* 保持宽度为流体 */
+    margin: 0 auto; /* 居中容器 */
+  }
 }
 
 .header {
@@ -457,7 +561,6 @@ export default {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 底部稍微的阴影 */
   font-size: 16px; /* 调整文字大小，如果需要可以适当调整 */
 }
-
 
 .room-item {
   display: flex;
@@ -499,8 +602,6 @@ export default {
 
 /* 对方发送的消息样式 */
 .received .message {
-  background-color: #ffffff;
-  color: black;
   border-radius: 5px 15px 15px 15px;
   border: 1px solid #e9e9e9;  /* 微信的对话气泡有一个细细的边 */
 }
@@ -585,18 +686,28 @@ export default {
   margin-left: 5px;
 }
 
+/* 默认情况下，假设屏幕宽度较小 */
 .aside {
-  /* 对于大部分的浏览器 */
+  width: 0;
+  overflow: hidden;
+  transition: width 0.3s ease; /* 动画效果 */
+
+  /* 滚动条样式 */
   overflow-y: scroll;
   scrollbar-width: none; /* Firefox */
-
-  /* 对于Webkit浏览器 */
   &::-webkit-scrollbar {
     display: none;
   }
 
   border-right: 1px solid #e4e7ed;
   background-color: #f5f7fa;
+}
+
+/* 当屏幕宽度大于768px时，将其显示 */
+@media (min-width: 768px) {
+  .aside {
+    width: 250px; /* 或你想要的其他宽度 */
+  }
 }
 
 .avatar, .avatar-group-item {
@@ -714,5 +825,71 @@ export default {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   outline: none;
 }
+
+.code-container {
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 4px;
+  position: relative;
+  margin: 5px 0;  /* 加入一个小的上下边距，以避免与其他消息挤在一起 */
+  background-color: #272822 !important;
+  color: #fff;             /* 代码块的白色文字 */
+  overflow-y: auto; /* 垂直滚动条，只在需要时出现 */
+  overflow-x: auto; /* 水平滚动条，只在需要时出现 */
+  max-height: 400px; /* 或你想要的任何最大高度，以确保内容超出此高度时出现垂直滚动条 */
+  white-space: nowrap; /* 确保代码行不会自动换行，从而在需要时触发水平滚动 */
+}
+
+.copy-button {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  background-color: #333;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 1;  /* 确保按钮总是在代码内容的顶部 */
+}
+
+.message {
+  position: relative;  /* 这将使得消息内容位于其容器的中心，而不是被复制按钮挤到一侧 */
+}
+
+.icon-sidebar {
+  width: 5%;
+  height: 100%;
+  background-color: #f5f7fa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;  /* 水平居中 */
+  //justify-content: space-between; /* 垂直分散对齐 */
+  padding-top: 5px;
+  padding-bottom: 5px;  /* 为了保持与padding-top一致，我添加了一个padding-bottom */
+}
+
+/* 如果你需要为.icon-sidebar里的每一个子元素添加上下边距 */
+.icon-sidebar > * {
+  margin-top: 5px;  /* 上边距 */
+  margin-bottom: 5px;  /* 下边距 */
+}
+
+
+.toggle-button {
+  font-size: 30px;  /* 调整图标大小 */
+  cursor: pointer;  /* 更改鼠标光标样式为指针，提醒用户这是一个可点击的元素 */
+  color: #333;  /* 调整图标颜色，你可以设置为你喜欢的颜色 */
+}
+
+.chat-image {
+  max-width: 200px;  /* 调整为您希望的最大宽度 */
+  max-height: 200px; /* 调整为您希望的最大高度 */
+  height: auto;
+  width: auto;
+  display: block;
+  margin: 0 auto;  /* 如果需要图像在其容器中居中 */
+}
+
 
 </style>

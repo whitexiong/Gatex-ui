@@ -166,7 +166,7 @@ export default {
         const response = await uploadFile(rawFile);
         console.log(response.data.avatar_url)
         if (response && response.data && response.data.avatar_url) {
-          User.value.AvatarUrl = "http://127.0.0.1:8051/" + response.data.avatar_url;
+          User.value.AvatarUrl = "http://10.8.0.6:8051/" + response.data.avatar_url;
         }
       } catch (error) {
         ElMessage.error('上传失败!');
