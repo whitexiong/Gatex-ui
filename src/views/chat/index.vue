@@ -258,7 +258,7 @@ export default {
       socket: null,
       filteredUsers: [],  // 假设这是你的用户列表
       transferData: [],   // 假设这是你的穿梭框数据
-      selectedRoom: { ID: null, Name: '', Description: '', Users: [], Messages: []}
+      selectedRoom: { ID: null, Name: '', Description: '', Users: [], Messages: []},
     });
 
     // 创建穿梭框数据

@@ -2,9 +2,6 @@ import axios from 'axios';
 
 import { BASE_URL } from './constants';
 
-export const getDashboardData = () => {
-    return axios.get(`${BASE_URL}/dashboard`);
-}
 
 export const UserLogin = (username, password) => {
     return axios.post(`${BASE_URL}/setting/user/login`, {

@@ -6,6 +6,7 @@ import chatRoutes from "@/router/chatRoutes";
 import openvpnRoutes from "@/router/openvpnRoutes";
 import UserLogin from '@/components/UserLogin.vue';
 import Dashboard from "@/components/Dashboard.vue";
+import projectRoutes from "@/router/projects";
 
 
 const routes = [
@@ -24,6 +25,7 @@ const routes = [
             ...settingRoutes,
             ...chatRoutes,
             ...openvpnRoutes,
+            ...projectRoutes,
         ]
     },
     {
