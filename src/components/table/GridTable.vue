@@ -38,10 +38,7 @@
                   </el-scrollbar>
 
                 </div>
-
               </div>
-
-
             </div>
 
           </el-card>
@@ -74,7 +71,7 @@ export default {
           thumbnail: 'http://fire.kwqskj.com/static/images/logo.png',
           category: 'Web 开发',
           tags: ['Vue.js', 'Node.js', 'MongoDB'],
-          description: '这是一个基于 Vue.js、Node.js 和 MongoDB 的 Web 开发项目一个基于 Vue.js、Node.js 和 MongoDB 的 Web 开一个基于 Vue.js、Node.js 和 MongoDB 的 Web 开一个基于 Vue.js、Node.js 和 MongoDB 的 Web 开'
+          description: '这是一个基于 Vue.js、Node.js 和 MongoDB 的 Web 开发项目一个基于 Vue.js'
         },
         {
           id: 2,
@@ -252,7 +249,6 @@ export default {
 .project-description {
   font-size: 1em;
   margin-top: 10px;
-  //overflow: auto;
 }
 
  @media (max-width: 600px) {
