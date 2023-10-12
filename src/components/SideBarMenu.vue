@@ -2,7 +2,8 @@
   <el-menu
       default-active="1"
       class="el-menu-vertical"
-      :collapse="isCollapse">
+      :collapse="isCollapse"
+      :class="{ 'slide-in': !isCollapse, 'slide-out': isCollapse }">
 
     <div class="logo-container" @click="goToHome">
       <img src="@/assets/logo.png" alt="Logo" class="nav-logo"/>
@@ -12,7 +13,6 @@
 
   </el-menu>
 </template>
-
 
 <script>
 import { ref, onMounted } from 'vue';
@@ -54,8 +54,8 @@ export default {
 <style scoped>
 .el-menu-vertical {
   width: 200px;
-  height: 100vh;  /* 设置高度为浏览器窗口的高度 */
-  overflow-y: auto;  /* 如果内容超过该高度，它将变为可滚动 */
+  height: 100vh;
+  transition: width 0.2s ease-in-out;
 }
 
 .el-menu-vertical.el-menu--collapse {
@@ -72,5 +72,30 @@ export default {
   margin-right: 10px;
 }
 
+/* Animation classes */
+.slide-in {
+  animation: slideIn 0.2s forwards;
+}
 
+.slide-out {
+  animation: slideOut 0.2s forwards;
+}
+
+@keyframes slideIn {
+  from {
+    width: 80px;
+  }
+  to {
+    width: 200px;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    width: 200px;
+  }
+  to {
+    width: 80px;
+  }
+}
 </style>

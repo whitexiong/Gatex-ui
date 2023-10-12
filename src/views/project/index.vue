@@ -13,7 +13,7 @@
           <el-icon>
             <Plus/>
           </el-icon>
-          新增用户
+          创建项目
         </el-button>
         <ADialog
             v-model="dialogVisible"
@@ -21,7 +21,7 @@
             @confirm="saveData"
             @reset="resetData"
         >
-          <el-form ref="UserForm" :model="User" label-width="80px" style="width: 100%;">
+          <el-form ref="ProjectForm" :model="Project" label-width="80px" style="width: 100%;">
 
             <el-form-item label="头像">
               <div>
@@ -31,19 +31,19 @@
                     :on-success="handleAvatarSuccess"
                     :before-upload="beforeAvatarUpload"
                 >
-                  <img v-if="User.AvatarUrl" :src="User.AvatarUrl" class="avatar"  alt=""/>
+                  <img v-if="Project.AvatarUrl" :src="Project.AvatarUrl" class="avatar"  alt=""/>
                   <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
                 </el-upload>
               </div>
             </el-form-item>
 
             <el-form-item label="用户名">
-              <el-input v-model="User.Username" placeholder="请输入用户名"></el-input>
+              <el-input v-model="Project.Projectname" placeholder="请输入用户名"></el-input>
             </el-form-item>
 
             <el-form-item label="密码">
               <el-input
-                  v-model="User.Password"
+                  v-model="Project.Password"
                   :type="showPassword ? 'text' : 'password'"
                   placeholder="请输入密码"
                   suffix-icon="el-icon-view"
@@ -52,16 +52,16 @@
             </el-form-item>
 
             <el-form-item label="邮箱">
-              <el-input v-model="User.Email" placeholder="请输入邮箱"></el-input>
+              <el-input v-model="Project.Email" placeholder="请输入邮箱"></el-input>
             </el-form-item>
             <el-form-item label="状态">
-              <el-switch v-model="User.Status" :active-value="1" :inactive-value="0"></el-switch>
+              <el-switch v-model="Project.Status" :active-value="1" :inactive-value="0"></el-switch>
             </el-form-item>
             <el-form-item label="是否为AI">
-              <el-checkbox v-model="User.IsAI" label="AI用户"></el-checkbox>
+              <el-checkbox v-model="Project.IsAI" label="AI用户"></el-checkbox>
             </el-form-item>
             <el-form-item label="角色">
-              <el-select v-model="User.Roles" multiple placeholder="请选择角色">
+              <el-select v-model="Project.Roles" multiple placeholder="请选择角色">
                 <el-option
                     v-for="role in allRoles"
                     :key="role.ID"
@@ -76,14 +76,14 @@
     </div>
 
     <GridTable
-        v-if="Users"
-        :tableData="Users"
+        v-if="Projects"
+        :tableData="Projects"
         @search="handleSearch"
         @size-change="handleSizeChange"
         @current-change="handlePageChange"
         @reset-filters="resetFilters"
         @edit="getDetail"
-        @delete="deleteUser"
+        @delete="deleteProject"
     />
 
   </div>
@@ -92,7 +92,7 @@
 <script>
 import {ref, onMounted} from 'vue';
 import {getList as getRoleList} from '@/services/roleService';
-import {getList as getUserList, add, update, detail, deletedById} from '@/services/userService';
+import {getList as getProjectList, add, update, detail, deletedById} from '@/services/projectService';
 import {Plus, Refresh, RefreshRight, Search} from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
 import {useCRUD} from '@/composables/useCRUD';
@@ -109,19 +109,21 @@ export default {
   },
   components: {GridTable, Plus, RefreshRight, ADialog},
   setup() {
-    const initialUser = {
+    const initialProject = {
       ID: null,
-      Username: '',
-      Email: '',
-      Password: '',
-      Status: null,
-      AvatarUrl: '',
-      IsAI: false,
-      Roles: [],
+      Name: '',
+      Description: '',
+      CoverImage: '',
+      Category: '',
+      Tags: '',
+      OwnerID: null,
+      Sort: 1,
+      Status: 0,
+      APIs: [],
     };
 
     const apiMethods = {
-      getList: getUserList,
+      getList: getProjectList,
       add: add,
       update: update,
       detail: detail,
@@ -129,7 +131,7 @@ export default {
     };
 
     const handleAvatarSuccess = (response) => {
-      User.AvatarUrl = response.avatar_url;
+      Project.AvatarUrl = response.avatar_url;
     };
 
     const beforeAvatarUpload = async (rawFile) => {
@@ -145,7 +147,7 @@ export default {
         const response = await uploadFile(rawFile);
         console.log(response.data.avatar_url)
         if (response && response.data && response.data.avatar_url) {
-          User.value.AvatarUrl = "http://127.0.0.1:8051/" + response.data.avatar_url;
+          Project.value.AvatarUrl = "http://127.0.0.1:8051/" + response.data.avatar_url;
         }
       } catch (error) {
         ElMessage.error('上传失败!');
@@ -154,8 +156,8 @@ export default {
     };
 
     const {
-      data: Users,
-      selected: User,
+      data: Projects,
+      selected: Project,
       dialogVisible,
       searchText,
       listData,
@@ -163,14 +165,14 @@ export default {
       refresh,
       addNew,
       getDetail,
-      deleted: deleteUser,
+      deleted: deleteProject,
       resetData,
       dialogTitle,
       handleSearch,
       handleSizeChange,
       handlePageChange,
       resetFilters,
-    } = useCRUD(apiMethods, initialUser);
+    } = useCRUD(apiMethods, initialProject);
 
     const allRoles = ref([]);
 
@@ -183,8 +185,8 @@ export default {
     });
 
     return {
-      Users,
-      User,
+      Projects,
+      Project,
       allRoles,
       dialogVisible,
       searchText,
@@ -193,7 +195,7 @@ export default {
       refresh,
       addNew,
       getDetail,
-      deleteUser,
+      deleteProject,
       resetData,
       dialogTitle,
       handleAvatarSuccess,

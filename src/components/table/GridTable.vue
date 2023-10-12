@@ -1,42 +1,37 @@
 <template>
   <div class="grid-container">
     <el-row :gutter="20">
-      <el-col v-for="project in paginatedProjects" :key="project.id" :span="8">
-        <div class="project-card" @mouseover="hover = project.id" @mouseout="hover = null">
-          <el-card :body-style="{ padding: '0px' }" :class="{ 'hovered': hover === project.id }">
+      <el-col v-for="project in paginatedProjects" :key="project.ID" :span="8">
+        <div class="project-card" @mouseover="hover = project.ID" @mouseout="hover = null">
+          <el-card :body-style="{ padding: '0px' }" :class="{ 'hovered': hover === project.ID }">
 
             <div class="project-header">
               <el-dropdown trigger="click">
                 <el-icon class="el-dropdown-link more-options"><More /></el-icon>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item @click="editProject(project.id)">编辑</el-dropdown-item>
-                    <el-dropdown-item @click="deleteProject(project.id)">删除</el-dropdown-item>
+                    <el-dropdown-item @click="editProject(project.ID)">编辑</el-dropdown-item>
+                    <el-dropdown-item @click="deleteProject(project.ID)">删除</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
             </div>
 
-
             <div class="project-card-content">
               <div class="thumbnail-wrapper">
-                <img :src="project.thumbnail" class="thumbnail" alt="project image">
+                <img :src="project.CoverImage" class="thumbnail" alt="project image">
               </div>
 
-
               <div class="info-wrapper">
-
                 <div class="project-details">
                   <el-scrollbar>
-
-                  <span class="project-name" @click="manageProject(project.id)">{{ project.name }}</span>
-                  <div class="project-category">分类: {{ project.category }}</div>
-                  <div class="project-tags">
-                    <span v-for="tag in project.tags" :key="tag" class="tag">{{ tag }}</span>
-                  </div>
-                    <div class="project-description" >{{ project.description }}</div>
+                    <span class="project-name" @click="manageProject(project.ID)">{{ project.Name }}</span>
+                    <div class="project-category">分类: {{ project.Category }}</div>
+                    <div class="project-tags">
+                      <span v-for="tag in project.Tags.split(',')" :key="tag" class="tag">{{ tag }}</span>
+                    </div>
+                    <div class="project-description" >{{ project.Description }}</div>
                   </el-scrollbar>
-
                 </div>
               </div>
             </div>
@@ -46,88 +41,79 @@
       </el-col>
     </el-row>
     <el-pagination
-        layout="prev, pager, next"
-        :total="projects.length"
-        :page-size="pageSize"
-        @current-change="handlePageChange"
-    ></el-pagination>
+        v-if="tableData.pagination"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="tableData.pagination.currentPage"
+        :page-sizes="[1, 10, 50, 100]"
+        :page-size="tableData.pagination.pageSize"
+        layout="sizes, total, prev, pager, next, jumper"
+        :total="tableData.pagination.totalItems"
+        :page-size-options="['10 条/页', '20 条/页', '50 条/页', '100 条/页']"
+        :prev-text="上一页"
+        :next-text="下一页">
+    </el-pagination>
+
   </div>
 </template>
 
 <script>
-
 import {More} from "@element-plus/icons-vue";
 
 export default {
-  components: {More},
-
-  data() {
-    return {
-      hover: null,
-      projects: [
-        {
-          id: 1,
-          name: '项目1',
-          thumbnail: 'http://fire.kwqskj.com/static/images/logo.png',
-          category: 'Web 开发',
-          tags: ['Vue.js', 'Node.js', 'MongoDB'],
-          description: '这是一个基于 Vue.js、Node.js 和 MongoDB 的 Web 开发项目一个基于 Vue.js'
-        },
-        {
-          id: 2,
-          name: '项目2',
-          thumbnail: 'http://192.168.0.210:8080/img/logo.efe14ba4.png',
-          category: '移动应用',
-          tags: ['React Native', 'Firebase'],
-          description: '这是一个基于 React Native 和 Firebase 的移动应用开发项目...'
-        },
-        {
-          id: 2,
-          name: '项目2',
-          thumbnail: 'http://192.168.0.210:8080/img/logo.efe14ba4.png',
-          category: '移动应用',
-          tags: ['React Native', 'Firebase'],
-          description: '这是一个基于 React Native 和 Firebase 的移动应用开发项目...'
-        },
-        {
-          id: 2,
-          name: '项目2',
-          thumbnail: 'http://192.168.0.210:8080/img/logo.efe14ba4.png',
-          category: '移动应用',
-          tags: ['React Native', 'Firebase'],
-          description: '这是一个基于 React Native 和 Firebase 的移动应用开发项目...'
-        },
-        // ...可能的其他项目数据
-      ],
-      pageSize: 9,
-      currentPage: 1
-    };
-  },
-  computed: {
-    paginatedProjects() {
-      const start = (this.currentPage - 1) * this.pageSize;
-      const end = start + this.pageSize;
-      return this.projects.slice(start, end);
+  props: {
+    tableData: {
+      type: Object,
+      default: () => ({
+        columnsConfig: [],
+        items: [],
+        pagination: {
+          currentPage: 1,
+          pageSize: 10,
+          totalItems: 0
+        }
+      })
     }
   },
+  components: {More},
+  data() {
+    return {
+      hover: null
+    };
+  },
+
+  computed: {
+    paginatedProjects() {
+      if (!this.tableData || !this.tableData.pagination) {
+        return [];
+      }
+
+      const { currentPage, pageSize } = this.tableData.pagination;
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+
+      return this.tableData.items.slice(start, end);
+    }
+  },
+
   methods: {
-    toggleMenu(projectId) {
-      this.hover = projectId;
+    handleSizeChange(size) {
+      this.$emit('size-change', size);
+    },
+    handleCurrentChange(page) {
+      this.$emit('current-change', page);
     },
     editProject(projectId) {
-      console.log("Edit project:", projectId);
-      // 这里你可以添加编辑项目的逻辑
+      this.$emit('edit', projectId);
     },
     deleteProject(projectId) {
-      console.log("Delete project:", projectId);
-      // 这里你可以添加删除项目的逻辑
+      this.$emit('delete', projectId);
     },
     manageProject(projectId) {
-      console.log("Manage project:", projectId);
-      // 这里你可以添加管理项目的逻辑
+      this.$emit('manage', projectId);
     },
     handlePageChange(newPage) {
-      this.currentPage = newPage;
+      this.$emit('current-change', newPage);
     }
   }
 };
@@ -173,6 +159,8 @@ export default {
   height: 200px;
   width: 100%;
   overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 
@@ -249,6 +237,9 @@ export default {
 .project-description {
   font-size: 1em;
   margin-top: 10px;
+  flex: 1;
+  overflow: auto;
+  line-height: 20px;
 }
 
  @media (max-width: 600px) {

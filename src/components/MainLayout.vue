@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import {onMounted, onUnmounted, ref} from 'vue';
 import SideBarMenu from "@/components/SideBarMenu.vue";
 import NavBar from "@/components/NavBar.vue";
 import BreadcrumbNav from '@/components/BreadcrumbNav.vue';
@@ -37,6 +37,20 @@ export default {
     const toggleSidebar = () => {
       isCollapse.value = !isCollapse.value;
     };
+
+    const updateSidebar = () => {
+      isCollapse.value = window.innerWidth <= 768;
+    };
+
+    onMounted(() => {
+      window.addEventListener('resize', updateSidebar);
+      updateSidebar();
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', updateSidebar);
+    });
+
 
     return {
       isCollapse,
@@ -61,5 +75,12 @@ export default {
 .navbar {
   background-color: #E1E8EE;
 }
+
+@media (max-width: 768px) {
+  .navbar {
+    display: block;  /* 显示顶部导航 */
+  }
+}
+
 
 </style>
