@@ -6,18 +6,18 @@
           <component :is="getIconComponent(menu.icon)" class="icon-size adaptive-icon" />
           <span v-if="!isCollapse">{{ menu.name }}</span>
         </template>
-        <MenuRenderer :menus="menu.children" :isCollapse="isCollapse" />
+        <!-- 注意这里我们增加了一个 @menu-clicked 事件监听器 -->
+        <MenuRenderer :menus="menu.children" :isCollapse="isCollapse" @menu-clicked="bubbleUpMenuClicked"/>
       </el-sub-menu>
       <el-menu-item v-else :key="menu.id" :index="`${menu.id}`">
         <component :is="getIconComponent(menu.icon)" class="icon-size adaptive-icon" />
-        <router-link :to="menu.path">
-          <span>{{ menu.name }}</span>
+        <router-link :to="menu.path" v-slot="{ navigate }">
+          <span @click="handleClick(menu, navigate)">{{ menu.name }}</span>
         </router-link>
       </el-menu-item>
     </template>
   </div>
 </template>
-
 
 <script>
 import * as icons from '@element-plus/icons-vue';
@@ -35,17 +35,35 @@ export default {
     }
   },
 
-  setup(){
+  setup(_, { emit }) { // 注意这里我们使用了 { emit }
     const getIconComponent = (icon) => {
       return icons[icon];
     };
 
+    const handleClick = (menu, navigate) => {
+      menuClicked(menu);
+      navigate();
+    };
+
+    const menuClicked = (menu) => {
+      emit('menu-clicked', menu);
+    };
+
+    // 这个函数会在内部的MenuRenderer触发menu-clicked事件时调用
+    const bubbleUpMenuClicked = (menu) => {
+      // 我们再次触发这个事件，以便它可以在上一层的MenuRenderer或SideBarMenu中被捕获
+      emit('menu-clicked', menu);
+    };
+
     return {
-      getIconComponent
+      getIconComponent,
+      handleClick,
+      bubbleUpMenuClicked
     }
   }
 }
 </script>
+
 
 <style scoped>
 .icon-size {

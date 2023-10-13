@@ -9,7 +9,8 @@
       <img src="@/assets/logo.png" alt="Logo" class="nav-logo"/>
       <span class="logo-text" v-if="!isCollapse">GateX</span>
     </div>
-    <MenuRenderer :menus="menuData" :isCollapse="isCollapse"/>
+    <!-- 注意这里我们增加了一个 @menu-clicked 事件监听器 -->
+    <MenuRenderer :menus="menuData" :isCollapse="isCollapse" @menu-clicked="bubbleUpMenuClicked"/>
 
   </el-menu>
 </template>
@@ -30,7 +31,7 @@ export default {
     MenuRenderer
   },
 
-  setup() {
+  setup(_, { emit }) {  // 注意这里我们又一次使用了 { emit }
     const menuData = ref([]);
     const router = useRouter();
 
@@ -41,15 +42,21 @@ export default {
       }
     });
 
-    // 跳转到根目录页面
     const goToHome = () => {
       router.push('/');
     };
 
-    return { menuData, goToHome };
+    // 这个方法会在MenuRenderer触发menu-clicked事件时调用
+    const bubbleUpMenuClicked = (menu) => {
+      // 我们再次触发这个事件，以便它可以在上一层的Layout组件中被捕获
+      emit('menu-clicked', menu);
+    };
+
+    return { menuData, goToHome, bubbleUpMenuClicked };
   }
 }
 </script>
+
 
 <style scoped>
 .el-menu-vertical {
