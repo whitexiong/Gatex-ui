@@ -12,6 +12,13 @@
                   <el-dropdown-menu>
                     <el-dropdown-item @click="editProject(project.ID)">编辑</el-dropdown-item>
                     <el-dropdown-item @click="deleteProject(project.ID)">删除</el-dropdown-item>
+                    <el-dropdown-item @click="viewDetails(project.ID)">查看详情</el-dropdown-item>
+                    <el-dropdown-item @click="manageMembers(project.ID)">成员管理</el-dropdown-item>
+                    <el-dropdown-item @click="manageTasks(project.ID)">任务管理</el-dropdown-item>
+                    <el-dropdown-item @click="viewMilestones(project.ID)">时间线/里程碑</el-dropdown-item>
+                    <el-dropdown-item @click="manageFiles(project.ID)">文件和文档</el-dropdown-item>
+                    <el-dropdown-item @click="projectSettings(project.ID)">项目设置</el-dropdown-item>
+                    <el-dropdown-item @click="viewStats(project.ID)">项目统计</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -109,13 +116,32 @@ export default {
     deleteProject(projectId) {
       this.$emit('delete', projectId);
     },
-    manageProject(projectId) {
-      this.$emit('manage', projectId);
+    viewDetails(projectId) {
+      this.$emit('details', projectId);
+    },
+    manageMembers(projectId) {
+      this.$emit('members', projectId);
+    },
+    manageTasks(projectId) {
+      this.$emit('tasks', projectId);
+    },
+    viewMilestones(projectId) {
+      this.$emit('milestones', projectId);
+    },
+    manageFiles(projectId) {
+      this.$emit('files', projectId);
+    },
+    projectSettings(projectId) {
+      this.$emit('settings', projectId);
+    },
+    viewStats(projectId) {
+      this.$emit('stats', projectId);
     },
     handlePageChange(newPage) {
       this.$emit('current-change', newPage);
     }
   }
+
 };
 </script>
 

@@ -23,7 +23,15 @@
         >
           <el-form ref="ProjectForm" :model="Project" label-width="80px" style="width: 100%;">
 
-            <el-form-item label="头像">
+            <el-form-item label="项目名">
+              <el-input v-model="Project.Name" placeholder="请输入项目名"></el-input>
+            </el-form-item>
+
+            <el-form-item label="描述">
+              <el-input type="textarea" v-model="Project.Description" placeholder="请输入项目描述"></el-input>
+            </el-form-item>
+
+            <el-form-item label="封面图片">
               <div>
                 <el-upload
                     class="avatar-uploader"
@@ -31,47 +39,44 @@
                     :on-success="handleAvatarSuccess"
                     :before-upload="beforeAvatarUpload"
                 >
-                  <img v-if="Project.AvatarUrl" :src="Project.AvatarUrl" class="avatar"  alt=""/>
+                  <img v-if="Project.CoverImage" :src="Project.CoverImage" class="avatar" alt=""/>
                   <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
                 </el-upload>
               </div>
             </el-form-item>
 
-            <el-form-item label="用户名">
-              <el-input v-model="Project.Projectname" placeholder="请输入用户名"></el-input>
+            <el-form-item label="类别">
+              <el-input v-model="Project.Category" placeholder="请输入类别"></el-input>
             </el-form-item>
 
-            <el-form-item label="密码">
+            <el-form-item label="标签">
               <el-input
-                  v-model="Project.Password"
-                  :type="showPassword ? 'text' : 'password'"
-                  placeholder="请输入密码"
-                  suffix-icon="el-icon-view"
-                  @click:append="togglePasswordVisibility">
-              </el-input>
+                  v-model="newTag"
+                  placeholder="输入新标签并按Enter"
+                  @keyup.enter="addTag"
+              ></el-input>
+              <el-tag
+                  v-for="(tag, index) in tags"
+                  :key="index"
+                  closable
+                  @close="removeTag(index)"
+              >
+                {{ tag }}
+              </el-tag>
             </el-form-item>
 
-            <el-form-item label="邮箱">
-              <el-input v-model="Project.Email" placeholder="请输入邮箱"></el-input>
-            </el-form-item>
+
             <el-form-item label="状态">
               <el-switch v-model="Project.Status" :active-value="1" :inactive-value="0"></el-switch>
             </el-form-item>
-            <el-form-item label="是否为AI">
-              <el-checkbox v-model="Project.IsAI" label="AI用户"></el-checkbox>
+
+            <el-form-item label="排序">
+              <el-input v-model="Project.Sort" placeholder="输入排序值"></el-input>
             </el-form-item>
-            <el-form-item label="角色">
-              <el-select v-model="Project.Roles" multiple placeholder="请选择角色">
-                <el-option
-                    v-for="role in allRoles"
-                    :key="role.ID"
-                    :label="role.Name"
-                    :value="role.ID">
-                </el-option>
-              </el-select>
-            </el-form-item>
+
           </el-form>
         </ADialog>
+
       </div>
     </div>
 
@@ -99,6 +104,7 @@ import {useCRUD} from '@/composables/useCRUD';
 import {uploadFile} from "@/services/uploadService";
 import edit from "@element-plus/icons/lib/Edit";
 import GridTable from "@/components/table/GridTable.vue";
+import {ElMessage} from "element-plus";
 
 
 export default {
@@ -116,10 +122,10 @@ export default {
       CoverImage: '',
       Category: '',
       Tags: '',
-      OwnerID: null,
+      // OwnerID: null,
       Sort: 1,
       Status: 0,
-      APIs: [],
+      // APIs: [],
     };
 
     const apiMethods = {
@@ -130,8 +136,20 @@ export default {
       deletedById: deletedById,
     };
 
-    const handleAvatarSuccess = (response) => {
-      Project.AvatarUrl = response.avatar_url;
+    const tags = ref([]);
+    const newTag = ref('');
+
+
+    const addTag = () => {
+      // 检查标签是否存在且不在当前标签数组中
+      if (newTag.value && !tags.value.includes(newTag.value)) {
+        tags.value.push(newTag.value);
+        newTag.value = '';  // 清空输入
+      }
+    };
+
+    const removeTag = (index) => {
+      tags.value.splice(index, 1);
     };
 
     const beforeAvatarUpload = async (rawFile) => {
@@ -145,14 +163,18 @@ export default {
 
       try {
         const response = await uploadFile(rawFile);
-        console.log(response.data.avatar_url)
-        if (response && response.data && response.data.avatar_url) {
-          Project.value.AvatarUrl = "http://127.0.0.1:8051/" + response.data.avatar_url;
+        console.log(response.data.cover_image)
+        if (response && response.data && response.data.url) {
+          Project.value.CoverImage = "http://127.0.0.1:8051/" + response.data.url;
         }
       } catch (error) {
         ElMessage.error('上传失败!');
       }
       return false;
+    };
+
+    const handleAvatarSuccess = (response) => {
+      Project.CoverImage = response.url;
     };
 
     const {
@@ -204,6 +226,10 @@ export default {
       handleSizeChange,
       handlePageChange,
       resetFilters,
+      tags,
+      newTag,
+      addTag,
+      removeTag
     };
   }
 };
@@ -258,5 +284,8 @@ export default {
   text-align: center;
 }
 
-
+.el-tag {
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
 </style>

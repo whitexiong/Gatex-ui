@@ -99,6 +99,7 @@ import {useCRUD} from '@/composables/useCRUD';
 import {uploadFile} from "@/services/uploadService";
 import DynamicTable from "@/components/table/DynamicTable.vue"
 import edit from "@element-plus/icons/lib/Edit";
+import {ElMessage} from "element-plus";
 
 
 export default {
@@ -129,7 +130,7 @@ export default {
     };
 
     const handleAvatarSuccess = (response) => {
-      User.AvatarUrl = response.avatar_url;
+      User.AvatarUrl = response.url;
     };
 
     const beforeAvatarUpload = async (rawFile) => {
@@ -144,8 +145,8 @@ export default {
       try {
         const response = await uploadFile(rawFile);
         console.log(response.data.avatar_url)
-        if (response && response.data && response.data.avatar_url) {
-          User.value.AvatarUrl = "http://127.0.0.1:8051/" + response.data.avatar_url;
+        if (response && response.data && response.data.url) {
+          User.value.AvatarUrl = "http://127.0.0.1:8051/" + response.data.url;
         }
       } catch (error) {
         ElMessage.error('上传失败!');

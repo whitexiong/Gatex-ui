@@ -83,9 +83,9 @@ export default {
       if (selectedFile.value) {
         try {
           const response = await uploadFile(selectedFile.value);
-          if (response && response.data && response.data.avatar_url) {
+          if (response && response.data && response.data.url) {
             // 根据您的响应构建完整的 URL
-            const imageUrl = "http://10.8.0.6:8051/" + response.data.avatar_url;
+            const imageUrl = "http://10.8.0.6:8051/" + response.data.url;
 
             // 发出一个事件，通知父组件图片已上传，并传递URL。
             emit('file-uploaded', imageUrl);
