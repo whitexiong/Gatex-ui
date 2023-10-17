@@ -2,7 +2,7 @@
   <el-tabs
       v-model="editableTabsValue"
       type="card"
-      class="demo-tabs"
+      class="tabs"
       closable
       @tab-remove="removeTab"
       @tab-click="handleTabClick"
@@ -18,8 +18,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
-import {useRoute} from "vue-router";
+import {ref, toRefs, watch} from 'vue'
 import router from "@/router";
 
 export default {
@@ -28,28 +27,40 @@ export default {
     tabs: {
       type: Array,
       required: true
-    }
+    },
   },
   setup(props, { emit }) {
-    const editableTabsValue = ref(props.tabs.length > 0 ? props.tabs[0].name : '');
+    const { tabs } = toRefs(props);
+    const editableTabsValue = ref(tabs.value.length > 0 ? tabs.value[0].name : '');
+
 
     const removeTab = (targetName) => {
       let activeName = editableTabsValue.value;
+
       if (activeName === targetName) {
         const tabs = props.tabs;
+        let newActiveTab = null;
+
         tabs.forEach((tab, index) => {
           if (tab.name === targetName) {
-            const nextTab = tabs[index + 1] || tabs[index - 1];
-            if (nextTab) {
-              activeName = nextTab.name;
-            }
+            // 尝试获取下一个标签，如果不存在，就获取前一个标签
+            newActiveTab = tabs[index + 1] || tabs[index - 1];
           }
         });
+
+        if (newActiveTab) {
+          activeName = newActiveTab.name;
+          router.push(activeName); // 跳转到新的激活的标签页对应的路由
+        } else {
+          activeName = null; // 如果没有其他标签页，设为null
+          router.push('/'); // 跳转到首页
+        }
+
         editableTabsValue.value = activeName;
       }
 
       emit('remove-tab', targetName);
-      emit('update:modelValue', activeName); // to keep parent's activeTab in sync
+      emit('update:modelValue', activeName);
     }
 
     const handleTabClick = (pane, ev) => {
@@ -57,22 +68,21 @@ export default {
       router.push(tabName)
     };
 
+    watch(tabs, (newTabs) => {
+      if (!newTabs.find(tab => tab.name === editableTabsValue.value)) {
+        editableTabsValue.value = newTabs.length > 0 ? newTabs[0].name : '';
+      }
+    });
+
     return {
       editableTabsValue,
       removeTab,
-      handleTabClick
+      handleTabClick,
     }
   }
 }
 </script>
 
 
-
 <style scoped>
-.demo-tabs > .el-tabs__content {
-  padding: 32px;
-  color: #6b778c;
-  font-size: 32px;
-  font-weight: 600;
-}
 </style>

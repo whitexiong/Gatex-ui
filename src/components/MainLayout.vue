@@ -19,12 +19,11 @@
 </template>
 
 <script>
-import { onMounted, onUnmounted, ref, watch, toRaw } from 'vue';
+import { onMounted, onUnmounted, ref, watch, provide } from 'vue';
 import SideBarMenu from "@/components/SideBarMenu.vue";
 import NavBar from "@/components/NavBar.vue";
 import BreadcrumbNav from '@/components/BreadcrumbNav.vue';
 import EditableTabs from '@/components/EditableTabs.vue';
-import router from "@/router";
 
 export default {
   name: 'Layout',
@@ -37,6 +36,13 @@ export default {
   setup() {
     const isCollapse = ref(true);
     const isDarkMode = ref(false); // 初始化暗黑模式为false
+    const storedTabs = localStorage.getItem('editableTabs');
+    const editableTabs = ref(storedTabs ? JSON.parse(storedTabs) : []);
+    const activeTab = ref(null);
+
+    //提供选中机制
+    provide('editableTabs', editableTabs);
+    provide('activeTab', activeTab);
 
     const toggleSidebar = () => {
       isCollapse.value = !isCollapse.value;
@@ -55,15 +61,9 @@ export default {
       window.removeEventListener('resize', updateSidebar);
     });
 
-    const storedTabs = localStorage.getItem('editableTabs');
-    const editableTabs = ref(storedTabs ? JSON.parse(storedTabs) : []);
-
-    const activeTab = ref(null);  // add this line to track the active tab
-
     const handleTabRemoval = (tabName) => {
       const index = editableTabs.value.findIndex(tab => tab.name === tabName);
       if (index !== -1) {
-        // 使用spread操作符来创建一个新的数组，然后删除特定索引的元素
         editableTabs.value = [
           ...editableTabs.value.slice(0, index),
           ...editableTabs.value.slice(index + 1)
@@ -75,14 +75,7 @@ export default {
       console.log('handleTabClicked triggered with item:', item);
     };
 
-    watch(editableTabs, (newTabs) => {
-      console.log("Tabs changed: ", newTabs);
-      localStorage.setItem('editableTabs', JSON.stringify(newTabs));
-    });
-
-
     const handleMenuClick = (menu) => {
-      console.log("Handling menu click in parent component with menu:", menu);
       if (!editableTabs.value.find(tab => tab.name === menu.id)) {
         editableTabs.value = [...editableTabs.value, {
           title: menu.name,
@@ -93,6 +86,11 @@ export default {
         }];
       }
     };
+
+    watch(editableTabs, (newTabs) => {
+      console.log("Tabs changed: ", newTabs);
+      localStorage.setItem('editableTabs', JSON.stringify(newTabs));
+    });
 
     return {
       isCollapse,

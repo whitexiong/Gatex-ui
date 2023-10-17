@@ -1,4 +1,5 @@
 import ProjectsManagement from '@/views/project';
+import ProjectsApiEndpointsManagement from '@/views/project/api-endpoints';
 
 
 const projectRoutes = [
@@ -10,6 +11,15 @@ const projectRoutes = [
             requiresAuth: true
         }
     },
+    {
+        path: 'projects/api-endpoints/list',
+        name: 'ApiEndpointsIndex',
+        component: () => ProjectsApiEndpointsManagement,
+        meta: {
+            requiresAuth: true
+        }
+    }
 ];
+
 
 export default projectRoutes;

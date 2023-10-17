@@ -15,6 +15,7 @@
           </el-icon>
           创建项目
         </el-button>
+
         <ADialog
             v-model="dialogVisible"
             :title="dialogTitle"
@@ -89,22 +90,55 @@
         @reset-filters="resetFilters"
         @edit="getDetail"
         @delete="deleteProject"
-    />
+    >
+      <template #default="slotProps">
+        <el-dropdown-item @click="viewDetails(slotProps.project.ID)">
+          <el-icon><View /></el-icon>查看详情
+        </el-dropdown-item>
+        <el-dropdown-item @click="manageMembers(slotProps.project.ID)">
+          <el-icon><UserFilled /></el-icon>成员管理
+        </el-dropdown-item>
+        <el-dropdown-item @click="manageAPIEndpoints(slotProps.project.ID)">
+          <el-icon><Position /></el-icon>管理API端点
+        </el-dropdown-item>
+        <el-dropdown-item @click="manageTasks(slotProps.project.ID)">
+          <el-icon><Expand /></el-icon>任务管理
+        </el-dropdown-item>
+        <el-dropdown-item @click="viewMilestones(slotProps.project.ID)">
+          <el-icon><Timer /></el-icon>时间线/里程碑
+        </el-dropdown-item>
+        <el-dropdown-item @click="manageFiles(slotProps.project.ID)">
+          <el-icon><Files /></el-icon>文件和文档
+        </el-dropdown-item>
+        <el-dropdown-item @click="projectSettings(slotProps.project.ID)">
+          <el-icon><Setting /></el-icon>项目设置
+        </el-dropdown-item>
+        <el-dropdown-item @click="viewStats(slotProps.project.ID)">
+          <el-icon><TrendCharts /></el-icon>项目统计
+        </el-dropdown-item>
+      </template>
+    </GridTable>
+
+    <ProjectSettingsModal />
+
 
   </div>
 </template>
 
 <script>
-import {ref, onMounted} from 'vue';
+import {ref, onMounted, inject, nextTick} from 'vue';
 import {getList as getRoleList} from '@/services/roleService';
 import {getList as getProjectList, add, update, detail, deletedById} from '@/services/projectService';
-import {Plus, Refresh, RefreshRight, Search} from "@element-plus/icons-vue";
+import {Plus, RefreshRight, View,UserFilled,Expand,Timer,Files,Setting,TrendCharts, Position} from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
 import {useCRUD} from '@/composables/useCRUD';
 import {uploadFile} from "@/services/uploadService";
 import edit from "@element-plus/icons/lib/Edit";
 import GridTable from "@/components/table/GridTable.vue";
 import {ElMessage} from "element-plus";
+import {useRouter} from "vue-router";
+import ProjectSettingsModal from "@/views/project/ProjectSettingsDialog.vue";
+import {openProjectSettingsForCreate} from "@/composables/useState";
 
 
 export default {
@@ -113,7 +147,21 @@ export default {
       return edit
     }
   },
-  components: {GridTable, Plus, RefreshRight, ADialog},
+  components: {
+    ProjectSettingsModal,
+    GridTable,
+    Plus,
+    RefreshRight,
+    ADialog,
+    View,
+    UserFilled,
+    Expand,
+    Timer,
+    Files,
+    Setting,
+    TrendCharts,
+    Position
+  },
   setup() {
     const initialProject = {
       ID: null,
@@ -128,6 +176,8 @@ export default {
       // APIs: [],
     };
 
+    const router = useRouter();
+
     const apiMethods = {
       getList: getProjectList,
       add: add,
@@ -138,6 +188,8 @@ export default {
 
     const tags = ref([]);
     const newTag = ref('');
+    const editableTabs = inject('editableTabs');
+    const activeTab = inject('activeTab');
 
 
     const addTag = () => {
@@ -206,6 +258,52 @@ export default {
       }
     });
 
+    const viewDetails = (projectId) => {
+      router.push({ name: 'ProjectDetailView', params: { projectId } });
+    };
+
+
+    const manageMembers = (projectId) => {
+      router.push({ name: 'ManageMembersView', params: { projectId } });
+    };
+
+    const manageTasks = (projectId) => {
+      router.push({ name: 'ManageTasksView', params: { projectId } });
+    };
+
+
+    const viewMilestones = (projectId) => {
+      router.push({ name: 'MilestonesView', params: { projectId } });
+    };
+
+
+    const manageFiles = (projectId) => {
+      router.push({ name: 'ManageFilesView', params: { projectId } });
+    };
+
+    const projectSettings = (projectId) => {
+      openProjectSettingsForCreate(projectId);
+    };
+
+    const viewStats = (projectId) => {
+      router.push({ name: 'ProjectStatsView', params: { projectId } });
+    };
+
+    const manageAPIEndpoints = (projectId) => {
+      const newTab = {
+        title: 'API端点管理',
+        name: `/projects/api-endpoints/list`,
+        content: '',
+        path: `/projects/api-endpoints/list`,
+        id: projectId
+      };
+
+      editableTabs.value.push(newTab);
+      activeTab.value = newTab.name;
+      localStorage.setItem('editableTabs', JSON.stringify(editableTabs.value));
+      router.push({ name: 'ApiEndpointsIndex', params: { projectId } });
+    }
+
     return {
       Projects,
       Project,
@@ -229,7 +327,17 @@ export default {
       tags,
       newTag,
       addTag,
-      removeTag
+      removeTag,
+      viewDetails,
+      manageMembers,
+      manageTasks,
+      viewMilestones,
+      manageFiles,
+      viewStats,
+      manageAPIEndpoints,
+      editableTabs,
+      activeTab,
+      projectSettings
     };
   }
 };
@@ -288,4 +396,5 @@ export default {
   margin-right: 10px;
   margin-bottom: 10px;
 }
+
 </style>
