@@ -119,17 +119,16 @@
       </template>
     </GridTable>
 
-    <ProjectSettingsModal />
+    <ProjectSettingsDialog />
 
 
   </div>
 </template>
 
 <script>
-import {ref, onMounted, inject, nextTick} from 'vue';
+import {inject, onMounted, ref} from 'vue';
 import {getList as getRoleList} from '@/services/roleService';
-import {getList as getProjectList, add, update, detail, deletedById} from '@/services/projectService';
-import {Plus, RefreshRight, View,UserFilled,Expand,Timer,Files,Setting,TrendCharts, Position} from "@element-plus/icons-vue";
+import {add, deletedById, detail, getList as getProjectList, getSetting, update, saveSetting} from '@/services/projectService';
 import ADialog from '@/components/ADialog.vue';
 import {useCRUD} from '@/composables/useCRUD';
 import {uploadFile} from "@/services/uploadService";
@@ -137,8 +136,20 @@ import edit from "@element-plus/icons/lib/Edit";
 import GridTable from "@/components/table/GridTable.vue";
 import {ElMessage} from "element-plus";
 import {useRouter} from "vue-router";
-import ProjectSettingsModal from "@/views/project/ProjectSettingsDialog.vue";
-import {openProjectSettingsForCreate} from "@/composables/useState";
+import ProjectSettingsDialog from "@/views/project/projectSettingsDialog.vue";
+import {openProjectSettingsForCreate, projectSettingsModalState} from "@/composables/useState";
+import {
+  Expand,
+  Files,
+  Plus,
+  Position,
+  RefreshRight,
+  Setting,
+  Timer,
+  TrendCharts,
+  UserFilled,
+  View
+} from "@element-plus/icons-vue";
 
 
 export default {
@@ -148,7 +159,7 @@ export default {
     }
   },
   components: {
-    ProjectSettingsModal,
+    ProjectSettingsDialog,
     GridTable,
     Plus,
     RefreshRight,
@@ -205,8 +216,8 @@ export default {
     };
 
     const beforeAvatarUpload = async (rawFile) => {
-      if (rawFile.type !== 'image/jpeg') {
-        ElMessage.error('头像图片必须为JPG格式!');
+      if (rawFile.type !== 'image/jpeg' && rawFile.type !== 'image/png') {
+        ElMessage.error('头像图片必须为JPG或PNG格式!');
         return false;
       } else if (rawFile.size / 1024 / 1024 > 2) {
         ElMessage.error('头像图片大小不能超过2MB!');
@@ -217,7 +228,7 @@ export default {
         const response = await uploadFile(rawFile);
         console.log(response.data.cover_image)
         if (response && response.data && response.data.url) {
-          Project.value.CoverImage = "http://127.0.0.1:8051/" + response.data.url;
+          Project.value.CoverImage = "http://10.8.0.6:8051/" + response.data.url;
         }
       } catch (error) {
         ElMessage.error('上传失败!');
@@ -281,9 +292,19 @@ export default {
       router.push({ name: 'ManageFilesView', params: { projectId } });
     };
 
-    const projectSettings = (projectId) => {
+    async function projectSettings(projectId) {
+      try {
+        const response = await getSetting(projectId);
+        if (response.data && response.code === 200) {
+          projectSettingsModalState.projectSetting.value = response.data;
+        } else {
+          console.error("加载项目设置失败:", response.data.message);
+        }
+      } catch (error) {
+        console.error("API调用失败:", error.message);
+      }
       openProjectSettingsForCreate(projectId);
-    };
+    }
 
     const viewStats = (projectId) => {
       router.push({ name: 'ProjectStatsView', params: { projectId } });
@@ -390,11 +411,6 @@ export default {
   width: 178px;
   height: 178px;
   text-align: center;
-}
-
-.el-tag {
-  margin-right: 10px;
-  margin-bottom: 10px;
 }
 
 </style>

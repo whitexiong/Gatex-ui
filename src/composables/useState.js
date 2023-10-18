@@ -12,9 +12,9 @@ function createModalState() {
         project.value = data.project;
         isVisible.value = true;
     }
-
-    function openForCreate() {
+    function openForCreate(projectId) {
         mode.value = 'create';
+        projectSetting.value.projectId = projectId;
         isVisible.value = true;
     }
 

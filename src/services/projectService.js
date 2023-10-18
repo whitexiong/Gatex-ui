@@ -21,3 +21,10 @@ export const deletedById = (projectId) => {
     return axios.get(`${BASE_URL}/projects/delete/${projectId}`);
 }
 
+export const getSetting = (projectId) => {
+    return axios.get(`${BASE_URL}/projects/setting/${projectId}`);
+}
+
+export const saveSetting = (projectId, updatedData) => {
+    return axios.post(`${BASE_URL}/projects/setting/${projectId}`, updatedData);
+}
