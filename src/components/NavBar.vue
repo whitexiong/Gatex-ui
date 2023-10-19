@@ -1,7 +1,7 @@
 <template>
   <el-menu
       :default-active="activeIndex"
-      class="el-menu-demo"
+      class="el-menu-gatex"
       mode="horizontal"
       :ellipsis="false"
       @select="handleSelect"
@@ -87,7 +87,9 @@ const logout = () => {
     try {
       await UserLogout();
       localStorage.removeItem('token');
-      localStorage.removeItem('userData'); // 退出时删除用户数据
+      localStorage.removeItem('userData');
+      localStorage.removeItem('userMenus');
+      localStorage.removeItem('editableTabs');
       await router.push('/login');
     } catch (error) {
       console.error("退出登录失败：", error);

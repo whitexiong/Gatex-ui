@@ -1,4 +1,7 @@
 <template>
+
+  <transition name="slide" mode="out-in">
+
   <el-menu
       default-active="1"
       class="el-menu-vertical"
@@ -9,10 +12,10 @@
       <img src="@/assets/logo.png" alt="Logo" class="nav-logo"/>
       <span class="logo-text" v-if="!isCollapse">GateX</span>
     </div>
-    <!-- 注意这里我们增加了一个 @menu-clicked 事件监听器 -->
     <MenuRenderer :menus="menuData" :isCollapse="isCollapse" @menu-clicked="bubbleUpMenuClicked"/>
 
   </el-menu>
+  </transition>
 </template>
 
 <script>
@@ -31,7 +34,7 @@ export default {
     MenuRenderer
   },
 
-  setup(_, { emit }) {  // 注意这里我们又一次使用了 { emit }
+  setup(_, { emit }) {
     const menuData = ref([]);
     const router = useRouter();
 
@@ -46,9 +49,7 @@ export default {
       router.push('/');
     };
 
-    // 这个方法会在MenuRenderer触发menu-clicked事件时调用
     const bubbleUpMenuClicked = (menu) => {
-      // 我们再次触发这个事件，以便它可以在上一层的Layout组件中被捕获
       emit('menu-clicked', menu);
     };
 
@@ -61,13 +62,21 @@ export default {
 <style scoped>
 .el-menu-vertical {
   width: 200px;
-  height: 100vh;
+  min-height: 100vh;
   transition: width 0.2s ease-in-out;
 }
 
 .el-menu-vertical.el-menu--collapse {
   width: 80px;
 }
+
+.slide-enter-active, .slide-leave-active {
+  transition: width 0.5s;
+}
+.slide-enter, .slide-leave-to /* .slide-leave-active in <2.1.8 */ {
+  width: 80px;
+}
+
 
 .logo-container {
   display: flex;
@@ -105,4 +114,5 @@ export default {
     width: 80px;
   }
 }
+
 </style>

@@ -284,7 +284,18 @@ export default {
 
 
     const viewMilestones = (projectId) => {
-      router.push({ name: 'MilestonesView', params: { projectId } });
+      const newTab = {
+        title: '时间线/里程碑',
+        name: `/projects/view-milestones`,
+        content: '',
+        path: `/projects/view-milestones`,
+        id: projectId
+      };
+
+      editableTabs.value.push(newTab);
+      activeTab.value = newTab.name;
+      localStorage.setItem('editableTabs', JSON.stringify(editableTabs.value));
+      router.push({ name: 'ViewMilestonesIndex', params: { projectId } });
     };
 
 
