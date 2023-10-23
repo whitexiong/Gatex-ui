@@ -93,7 +93,7 @@
 import {ref, onMounted} from 'vue';
 import {getList as getRoleList} from '@/services/roleService';
 import {getList as getUserList, add, update, detail, deletedById} from '@/services/userService';
-import {Plus, Refresh, RefreshRight, Search} from "@element-plus/icons-vue";
+import {Plus, RefreshRight} from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
 import {useCRUD} from '@/composables/useCRUD';
 import {uploadFile} from "@/services/uploadService";

@@ -5,7 +5,7 @@
       title="项目设置"
       @close="handleClose">
 
-    <el-form :model="projectSetting" label-width="80px">
+    <el-form :model="state" label-width="80px">
       <el-form-item
           v-for="item in formItems"
           :key="item.prop"
@@ -14,7 +14,7 @@
       >
         <component
             :is="item.component"
-            v-model="projectSetting[item.prop]"
+            v-model="state[item.prop]"
             v-bind="item.attrs"
         >
           <el-option
@@ -43,7 +43,7 @@ import {saveSetting} from "@/services/projectService";
 export default {
   name: 'ProjectSettingsModal',
   setup() {
-    const {isVisible, projectSetting, close} = projectSettingsModalState;
+    const {isVisible, state, close} = projectSettingsModalState;
 
     const environments = ['Development', 'Test', 'Production'];
 
@@ -83,7 +83,7 @@ export default {
     ];
 
     const handleSubmit = () => {
-      saveSetting(projectSetting.value.ID, projectSetting.value)
+      saveSetting(state.value.ID, state.value)
           .then(response => {
             console.log("项目设置已保存");
             close();
@@ -95,7 +95,7 @@ export default {
 
     return {
       isVisible,
-      projectSetting,
+      state,
       handleClose,
       handleSubmit,
       environments,

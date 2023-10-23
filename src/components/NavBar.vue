@@ -34,19 +34,22 @@
 
         </div>
       </template>
-      <el-menu-item index="2-1">
+      <el-menu-item index="2-1" @click="userInfo">
         <el-icon><Postcard /></el-icon> 个人信息
       </el-menu-item>
       <el-menu-item index="2-2" @click="logout">
         <el-icon><SwitchButton /></el-icon> 退出登录
       </el-menu-item>
     </el-sub-menu>
+
+    <UserInfoDialog />
+
   </el-menu>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { Fold,Postcard,SwitchButton,UserFilled } from "@element-plus/icons-vue";
+import { Fold,Postcard,SwitchButton } from "@element-plus/icons-vue";
 
 const activeIndex = ref('1')
 const userData = ref(JSON.parse(localStorage.getItem('userData')))
@@ -60,9 +63,12 @@ const handleSelect = (key, keyPath) => {
 </script>
 
 <script>
-import { UserLogout } from '@/services/userService';
+
+import { UserLogout, detail } from '@/services/userService';
 import router from "@/router";
 import { ElMessageBox } from 'element-plus';
+import {projectSettingsModalState, userProfileModalState} from "@/composables/useState";
+
 
 export default {
   methods: {
@@ -76,6 +82,17 @@ export default {
       required: true
     }
   },
+}
+
+const userInfo = () => {
+  userProfileModalState.state.value = {
+    id: 123,
+    username: "demoUser",
+    avatar_url: "http://example.com/avatar.jpg",
+    email: "demo@example.com",
+  };
+
+  userProfileModalState.openWithPartialState({ projectSetting: 1 });
 }
 
 const logout = () => {

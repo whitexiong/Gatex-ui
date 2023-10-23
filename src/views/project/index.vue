@@ -119,8 +119,7 @@
       </template>
     </GridTable>
 
-    <ProjectSettingsDialog />
-
+    <ProjectSettingsModal />
 
   </div>
 </template>
@@ -128,7 +127,7 @@
 <script>
 import {inject, onMounted, ref} from 'vue';
 import {getList as getRoleList} from '@/services/roleService';
-import {add, deletedById, detail, getList as getProjectList, getSetting, update, saveSetting} from '@/services/projectService';
+import {add, deletedById, detail, getList as getProjectList, getSetting, update} from '@/services/projectService';
 import ADialog from '@/components/ADialog.vue';
 import {useCRUD} from '@/composables/useCRUD';
 import {uploadFile} from "@/services/uploadService";
@@ -136,8 +135,7 @@ import edit from "@element-plus/icons/lib/Edit";
 import GridTable from "@/components/table/GridTable.vue";
 import {ElMessage} from "element-plus";
 import {useRouter} from "vue-router";
-import ProjectSettingsDialog from "@/views/project/projectSettingsDialog.vue";
-import {openProjectSettingsForCreate, projectSettingsModalState} from "@/composables/useState";
+import ProjectSettingsModal from "@/components/Modal/ProjectSettingsModal.vue";
 import {
   Expand,
   Files,
@@ -150,7 +148,7 @@ import {
   UserFilled,
   View
 } from "@element-plus/icons-vue";
-
+import {projectSettingsModalState} from "@/composables/useState";
 
 export default {
   computed: {
@@ -159,7 +157,7 @@ export default {
     }
   },
   components: {
-    ProjectSettingsDialog,
+    ProjectSettingsModal,
     GridTable,
     Plus,
     RefreshRight,
@@ -201,7 +199,6 @@ export default {
     const newTag = ref('');
     const editableTabs = inject('editableTabs');
     const activeTab = inject('activeTab');
-
 
     const addTag = () => {
       // 检查标签是否存在且不在当前标签数组中
@@ -282,7 +279,6 @@ export default {
       router.push({ name: 'ManageTasksView', params: { projectId } });
     };
 
-
     const viewMilestones = (projectId) => {
       const newTab = {
         title: '时间线/里程碑',
@@ -307,15 +303,17 @@ export default {
       try {
         const response = await getSetting(projectId);
         if (response.data && response.code === 200) {
-          projectSettingsModalState.projectSetting.value = response.data;
+          projectSettingsModalState.state.value = response.data;
         } else {
           console.error("加载项目设置失败:", response.data.message);
         }
       } catch (error) {
         console.error("API调用失败:", error.message);
       }
-      openProjectSettingsForCreate(projectId);
+
+      projectSettingsModalState.openWithPartialState({ projectSetting: projectId });
     }
+
 
     const viewStats = (projectId) => {
       router.push({ name: 'ProjectStatsView', params: { projectId } });
