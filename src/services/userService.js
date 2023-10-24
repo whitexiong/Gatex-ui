@@ -1,7 +1,5 @@
 import axios from 'axios';
-
 import { BASE_URL } from './constants';
-
 
 export const UserLogin = (username, password) => {
     return axios.post(`${BASE_URL}/setting/user/login`, {
@@ -36,4 +34,12 @@ export const deletedById = (userId) => {
 
 export const GetUserMenus = () => {
     return axios.get(`${BASE_URL}/setting/user/menus`);
+}
+
+export const getCurrentUserInfo = () => {
+    return axios.get(`${BASE_URL}/setting/user/current`);
+}
+
+export const updateCurrentUserInfo = (updatedData) => {
+    return axios.post(`${BASE_URL}/setting/user/current/update`, updatedData);
 }

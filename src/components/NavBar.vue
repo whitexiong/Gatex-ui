@@ -42,7 +42,7 @@
       </el-menu-item>
     </el-sub-menu>
 
-    <UserInfoDialog />
+    <UserProfileModal />
 
   </el-menu>
 </template>
@@ -50,6 +50,7 @@
 <script setup>
 import { ref } from 'vue'
 import { Fold,Postcard,SwitchButton } from "@element-plus/icons-vue";
+import UserProfileModal from "@/components/Modal/UserProfileModal.vue";
 
 const activeIndex = ref('1')
 const userData = ref(JSON.parse(localStorage.getItem('userData')))
@@ -64,10 +65,10 @@ const handleSelect = (key, keyPath) => {
 
 <script>
 
-import { UserLogout, detail } from '@/services/userService';
+import { UserLogout, getCurrentUserInfo } from '@/services/userService';
 import router from "@/router";
 import { ElMessageBox } from 'element-plus';
-import {projectSettingsModalState, userProfileModalState} from "@/composables/useState";
+import {userProfileModalState} from "@/composables/useState";
 
 
 export default {
@@ -84,16 +85,21 @@ export default {
   },
 }
 
-const userInfo = () => {
-  userProfileModalState.state.value = {
-    id: 123,
-    username: "demoUser",
-    avatar_url: "http://example.com/avatar.jpg",
-    email: "demo@example.com",
-  };
+async function userInfo() {
+  try {
+    const response = await getCurrentUserInfo();
+    if (response.data && response.code === 200) {
+      userProfileModalState.state.value = response.data;
+    } else {
+      console.error("加载用户信息失败:", response.data.message);
+    }
+  } catch (error) {
+    console.error("API调用失败:", error.message);
+  }
 
-  userProfileModalState.openWithPartialState({ projectSetting: 1 });
+  userProfileModalState.openWithPartialState({ userID: userProfileModalState.state.value.id });
 }
+
 
 const logout = () => {
   ElMessageBox.confirm('确定要退出吗?', '提示', {

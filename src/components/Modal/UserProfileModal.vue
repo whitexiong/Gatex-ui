@@ -11,19 +11,25 @@
           :key="item.prop"
           :label="item.label"
       >
+
         <component
             :is="item.component"
             v-model="User[item.prop]"
             v-bind="item.attrs"
         >
+          <!-- Logic for the avatar uploader -->
+          <template v-if="item.component === 'el-upload'">
+            <img v-if="User.AvatarUrl" :src="User.AvatarUrl" class="avatar" alt=""/>
+            <el-icon class="avatar-uploader-icon" name="el-icon-plus"></el-icon>
+          </template>
+
           <el-option
               :v-if="item.component === 'el-select'"
               v-for="option in item.options"
               :key="option.ID"
               :label="option.Name"
               :value="option.ID"
-          >
-          </el-option>
+          ></el-option>
         </component>
       </el-form-item>
     </el-form>
@@ -33,29 +39,23 @@
     </template>
   </el-dialog>
 </template>
-
 <script>
 import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
+import { userProfileModalState } from "@/composables/useState";
 import { uploadFile } from "@/services/uploadService";
-import { userProfileModalState} from "@/composables/useState";
+import {update} from "@/services/userService";
 
 export default {
   name: 'UserProfileModal',
   setup() {
     const dialogTitle = ref("用户信息");
-    const {isVisible, state, close} = userProfileModalState;
-    const User = ref({
-      AvatarUrl: "",
-      Username: "",
-      Password: "",
-      Email: "",
-      Status: 0
-    });
+    const { isVisible, state: User, close } = userProfileModalState;
     const showPassword = ref(false);
 
     const handleAvatarSuccess = (response) => {
-      User.value.AvatarUrl = response.url;
+      console.log(User)
+      User.AvatarUrl = response.url;
     };
 
     const beforeAvatarUpload = async (rawFile) => {
@@ -72,7 +72,7 @@ export default {
       try {
         const response = await uploadFile(rawFile);
         if (response && response.data && response.data.url) {
-          User.value.AvatarUrl = "http://127.0.0.1:8051/" + response.data.url;
+          User.AvatarUrl = "http://127.0.0.1:8051/" + response.data.url;
         }
       } catch (error) {
         ElMessage.error('上传失败!');
@@ -85,12 +85,21 @@ export default {
       showPassword.value = !showPassword.value;
     };
 
+
     const saveData = () => {
-      // 保存数据逻辑
+      update(User.value.ID, User.value)
+          .then(response => {
+            console.log("项目设置已保存");
+            close();
+          })
+          .catch(error => {
+            console.error("保存项目设置出错:", error);
+          });
     };
 
     const resetData = () => {
       // 重置数据逻辑
+      close();
     };
 
     const userFormItems = [
@@ -103,7 +112,7 @@ export default {
           'show-file-list': false,
           'on-success': handleAvatarSuccess,
           'before-upload': beforeAvatarUpload
-        }
+        },
       },
       {
         prop: 'Username',
@@ -118,10 +127,15 @@ export default {
         label: '密码',
         component: 'el-input',
         attrs: {
-          type: showPassword.value ? 'text' : 'password',
           placeholder: '请输入密码',
-          'suffix-icon': 'el-icon-view',
-          '@click:append': togglePasswordVisibility
+          type: 'password',
+          append: {
+            component: 'el-button',
+            attrs: {
+              '@click': togglePasswordVisibility,
+              icon: showPassword.value ? 'el-icon-eye-off' : 'el-icon-eye'
+            }
+          }
         }
       },
       {
@@ -132,15 +146,6 @@ export default {
           placeholder: '请输入邮箱'
         }
       },
-      {
-        prop: 'Status',
-        label: '状态',
-        component: 'el-switch',
-        attrs: {
-          'active-value': 1,
-          'inactive-value': 0
-        }
-      }
     ];
 
     return {
@@ -157,7 +162,6 @@ export default {
     };
   }
 };
-
 </script>
 
 <style scoped>
